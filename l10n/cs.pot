@@ -29,9 +29,6 @@ msgstr "Akapulko"
 msgid "Actions"
 msgstr "Akce"
 
-msgid "Actions for item with name \"{name}\""
-msgstr "Akce pro položku s názvem „{name}“"
-
 msgid "Activities"
 msgstr "Aktivity"
 
@@ -269,8 +266,8 @@ msgstr "Otevřít odkaz na „{resourceName}“"
 msgid "Open menu"
 msgstr "Otevřít nabídku"
 
-msgid "Open navigation"
-msgstr "Otevřít navigaci"
+msgid "Open navigation {shortcut}"
+msgstr "Otevřít navigaci {shortcut}"
 
 msgid "Open sidebar"
 msgstr "Otevřít postranní panel"

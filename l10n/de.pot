@@ -33,9 +33,6 @@ msgstr "Acapulco"
 msgid "Actions"
 msgstr "Aktionen"
 
-msgid "Actions for item with name \"{name}\""
-msgstr "Aktionen für das Element \"{name}“"
-
 msgid "Activities"
 msgstr "Aktivitäten"
 
@@ -275,8 +272,8 @@ msgstr "Link zu \"{resourceName}“ öffnen"
 msgid "Open menu"
 msgstr "Menü öffnen"
 
-msgid "Open navigation"
-msgstr "Navigation öffnen"
+msgid "Open navigation {shortcut}"
+msgstr "Navigation öffnen {shortcut}"
 
 msgid "Open sidebar"
 msgstr "Seitenleiste öffnen"
