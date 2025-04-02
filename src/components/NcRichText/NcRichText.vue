@@ -307,6 +307,7 @@ import NcReferenceList from './NcReferenceList.vue'
 import NcCheckboxRadioSwitch from '../NcCheckboxRadioSwitch/NcCheckboxRadioSwitch.vue'
 import { getRoute, remarkAutolink } from './autolink.js'
 import { remarkPlaceholder, prepareTextNode } from './placeholder.js'
+import { remarkUnescape } from './remarkUnescape.js'
 import GenRandomId from '../../utils/GenRandomId.js'
 
 import { unified } from 'unified'
@@ -321,15 +322,13 @@ import { RouterLink } from 'vue-router'
 /**
  * Heavy libraries should be loaded on demand to reduce component size
  */
-let rehypeHighlight
-const rehypeHighlightLoaded = ref(false)
+const rehypeHighlight = ref(null)
 /**
  * Load 'rehype-highlight' library when code block is rendered with `useExtendedMarkdown`
  */
-async function importRehypeLibrary() {
+async function importRehypeHighlightLibrary() {
 	const module = await import('rehype-highlight')
-	rehypeHighlight = module.default
-	rehypeHighlightLoaded.value = true
+	rehypeHighlight.value = module.default
 }
 
 export default {
@@ -365,30 +364,7 @@ export default {
 			type: Object,
 			default: null,
 		},
-		markdownCssClasses: {
-			type: Object,
-			default: () => {
-				return {
-					a: 'rich-text--external-link',
-					ol: 'rich-text--ordered-list',
-					ul: 'rich-text--un-ordered-list',
-					li: 'rich-text--list-item',
-					strong: 'rich-text--strong',
-					em: 'rich-text--italic',
-					h1: 'rich-text--heading rich-text--heading-1',
-					h2: 'rich-text--heading rich-text--heading-2',
-					h3: 'rich-text--heading rich-text--heading-3',
-					h4: 'rich-text--heading rich-text--heading-4',
-					h5: 'rich-text--heading rich-text--heading-5',
-					h6: 'rich-text--heading rich-text--heading-6',
-					hr: 'rich-text--hr',
-					table: 'rich-text--table',
-					pre: 'rich-text--pre',
-					code: 'rich-text--code',
-					blockquote: 'rich-text--blockquote',
-				}
-			},
-		},
+		/** Provide basic Markdown syntax */
 		useMarkdown: {
 			type: Boolean,
 			default: false,
@@ -464,6 +440,7 @@ export default {
 					useMarkdown: this.useMarkdown,
 					useExtendedMarkdown: this.useExtendedMarkdown,
 				})
+				.use(remarkUnescape)
 				.use(this.useExtendedMarkdown ? remarkGfm : undefined)
 				.use(breaks)
 				.use(remark2rehype, {
@@ -473,8 +450,7 @@ export default {
 						},
 					},
 				})
-				.use((this.useExtendedMarkdown && rehypeHighlightLoaded.value) ? rehypeHighlight : undefined)
-				// .use(rehypeAddClasses, this.markdownCssClasses)
+				.use(this.useExtendedMarkdown ? rehypeHighlight.value : undefined)
 				.use(remarkPlaceholder)
 				.use(rehypeExternalLinks, {
 					target: '_blank',
@@ -482,16 +458,11 @@ export default {
 				})
 				.use(rehype2react, {
 					createElement: (tag, attrs, children) => {
-						// unescape special symbol "<" for simple text nodes
-						children = children?.map(child => typeof child === 'string'
-							? child.replace(/&lt;/gmi, '<')
-							: child,
-						)
-
 						if (!tag.startsWith('#')) {
 							if (this.useExtendedMarkdown) {
-								if (tag === 'code' && !rehypeHighlightLoaded.value) {
-									importRehypeLibrary()
+								if (tag === 'code' && !rehypeHighlight.value
+									&& attrs?.attrs?.class?.includes('language')) {
+									importRehypeHighlightLibrary()
 								}
 								let nestedNode = null
 								if (tag === 'li' && Array.isArray(children)
@@ -564,7 +535,7 @@ export default {
 				})
 				.processSync(this.text
 					// escape special symbol "<" to not treat text as HTML
-					.replace(/</gmi, '&lt;')
+					.replace(/<[^>]+>/g, (match) => match.replace(/</g, '&lt;'))
 					// unescape special symbol ">" to parse blockquotes
 					.replace(/&gt;/gmi, '>'),
 				)

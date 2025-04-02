@@ -13,29 +13,48 @@ All available types are: 'date', 'datetime-local', 'month', 'time' and 'week', p
 
 ### Examples
 
-#### Usage: type='datetime-local'
 ```vue
 <template>
 	<div>
 		<span>Picked date: {{ value || 'null' }}</span>
-		<NcDateTimePickerNative
-			v-model="value"
-			:id="id"
-			:label="label"
-			type="datetime-local" />
+		<hr/>
+		<div class="flex">
+			<NcSelect v-bind="props" v-model="type" />
+			<NcDateTimePickerNative
+				v-model="value"
+				:label="label"
+				:type="type" />
+		</div>
 	</div>
 </template>
 <script>
 	export default {
 		data() {
 			return {
+				props: {
+					clearable: false,
+					inputLabel: 'Picker type',
+					options: [
+						'date',
+						'datetime-local',
+						'month',
+						'time',
+						'week',
+					],
+				},
+				type: 'datetime-local',
 				value: new Date(),
-				id: 'date-time-picker',
-				label: 'please select a new date',
+				label: 'Select a new date or time',
 			}
 		},
 	}
 </script>
+<style scoped>
+.flex {
+	display: flex;
+	gap: 4px;
+}
+</style>
 ```
 
 #### Usage: type='datetime-local' with min date and max date
@@ -45,7 +64,6 @@ All available types are: 'date', 'datetime-local', 'month', 'time' and 'week', p
 		<span>Picked date: {{ value || 'null' }}</span>
 		<NcDateTimePickerNative
 			v-model="value"
-			:id="id"
 			:min="yesterdayDate"
 			:max="someDate"
 			:label="label"
@@ -58,7 +76,6 @@ All available types are: 'date', 'datetime-local', 'month', 'time' and 'week', p
 		data() {
 			return {
 				value: new Date(),
-				id: 'date-time-picker',
 				label: 'please select a new date',
 				yesterdayDate: new Date(new Date().setDate(new Date().getDate() - 1)),
 				someDate: new Date(new Date().setDate(new Date().getDate() + 7)),
@@ -67,90 +84,15 @@ All available types are: 'date', 'datetime-local', 'month', 'time' and 'week', p
 	}
 </script>
 ```
-
-#### Usage: type='time'
-```vue
-<template>
-	<div>
-		<span>Picked time: {{ value || 'null' }}</span>
-		<NcDateTimePickerNative
-			v-model="value"
-			:id="id"
-			:label="label"
-			type="time" />
-	</div>
-</template>
-
-<script>
-	export default {
-		data() {
-			return {
-				value: new Date(),
-				id: 'date-time-picker',
-				label: 'Please select a new time',
-			}
-		},
-	}
-</script>
-```
-
-#### Usage: type='week'
-```vue
-<template>
-	<div>
-		<span>Picked date: {{ value || 'null' }}</span>
-		<NcDateTimePickerNative
-			v-model="value"
-			:id="id"
-			:label="label"
-			type="week" />
-	</div>
-</template>
-
-<script>
-	export default {
-		data() {
-			return {
-				value: new Date(),
-				id: 'date-time-picker',
-				label: 'please select a new date',
-			}
-		},
-	}
-</script>
-```
-
-#### Usage: type='month'
-```vue
-<template>
-	<div>
-		<span>Picked date: {{ value || 'null' }}</span>
-		<NcDateTimePickerNative
-			v-model="value"
-			:id="id"
-			:label="label"
-			type="month" />
-	</div>
-</template>
-
-<script>
-	export default {
-		data() {
-			return {
-				value: new Date(),
-				id: 'date-time-picker',
-				label: 'please select a new date',
-			}
-		},
-	}
-</script>
-```
-
 </docs>
 
 <template>
 	<div class="native-datetime-picker">
-		<label :class="{ 'hidden-visually': hideLabel }" :for="id">{{ label }}</label>
+		<label class="native-datetime-picker--label"
+			:class="{ 'hidden-visually': hideLabel }"
+			:for="id">
+			{{ label }}
+		</label>
 		<input :id="id"
 			class="native-datetime-picker--input"
 			:class="inputClass"
@@ -165,6 +107,7 @@ All available types are: 'date', 'datetime-local', 'month', 'time' and 'week', p
 
 <script>
 import { useModelMigration } from '../../composables/useModelMigration.ts'
+import GenRandomId from '../../utils/GenRandomId.js'
 
 const inputDateTypes = ['date', 'datetime-local', 'month', 'time', 'week']
 
@@ -203,7 +146,8 @@ export default {
 		 */
 		id: {
 			type: String,
-			required: true,
+			default: () => 'date-time-picker-' + GenRandomId(),
+			validator: id => id.trim() !== '',
 		},
 		/**
 		 * type attribute of the input field
@@ -309,8 +253,7 @@ export default {
 				input: ($event) => {
 					if (isNaN($event.target.valueAsNumber)) {
 						this.model = null
-					}
-					if (this.type === 'time') {
+					} else if (this.type === 'time') {
 						const time = $event.target.value
 						if (this.model === '') {
 							// this case is because of Chrome bug
@@ -321,21 +264,24 @@ export default {
 							 * @return {Date} new chosen Date()
 							 */
 							this.model = new Date(`${yyyy}-${MM}-${dd}T${time}`)
+						} else {
+							const { yyyy, MM, dd } = this.getReadableDate(this.model)
+							this.model = new Date(`${yyyy}-${MM}-${dd}T${time}`)
 						}
-						const { yyyy, MM, dd } = this.getReadableDate(this.model)
-						this.model = new Date(`${yyyy}-${MM}-${dd}T${time}`)
 					} else if (this.type === 'month') {
 						const MM = (new Date($event.target.value).getMonth() + 1).toString().padStart(2, '0')
 						if (this.model === '') {
 							const { yyyy, dd, hh, mm } = this.getReadableDate(new Date())
 							this.model = new Date(`${yyyy}-${MM}-${dd}T${hh}:${mm}`)
+						} else {
+							const { yyyy, dd, hh, mm } = this.getReadableDate(this.model)
+							this.model = new Date(`${yyyy}-${MM}-${dd}T${hh}:${mm}`)
 						}
-						const { yyyy, dd, hh, mm } = this.getReadableDate(this.model)
-						this.model = new Date(`${yyyy}-${MM}-${dd}T${hh}:${mm}`)
+					} else {
+						const timezoneOffsetSeconds = new Date($event.target.valueAsNumber).getTimezoneOffset() * 1000 * 60
+						const inputDateWithTimezone = $event.target.valueAsNumber + timezoneOffsetSeconds
+						this.model = new Date(inputDateWithTimezone)
 					}
-					const timezoneOffsetSeconds = new Date($event.target.valueAsNumber).getTimezoneOffset() * 1000 * 60
-					const inputDateWithTimezone = $event.target.valueAsNumber + timezoneOffsetSeconds
-					this.model = new Date(inputDateWithTimezone)
 				},
 			}
 		},
@@ -397,10 +343,30 @@ export default {
 		flex-direction: column;
 	}
 
+	.native-datetime-picker .native-datetime-picker--label {
+		margin-block-end: 2px;
+	}
+
 	.native-datetime-picker .native-datetime-picker--input {
+		// If border width differs between focused and unfocused we need to compensate to prevent jumping
+		--input-border-width-offset: calc(var(--border-width-input-focused, 2px) - var(--border-width-input, 2px));
 		width: 100%;
 		flex: 0 0 auto;
-		padding-right: 4px;
+		margin: 0;
+		padding-inline-start: calc(var(--border-radius-large) + var(--input-border-width-offset));
+		padding-inline-end: calc(var(--default-grid-baseline) + var(--input-border-width-offset));
+		border: var(--border-width-input, 2px) solid var(--color-border-maxcontrast);
+
+		&:active:not([disabled]),
+		&:hover:not([disabled]),
+		&:focus:not([disabled]),
+		&:focus-within:not([disabled]) {
+			border-color: var(--color-main-text);
+			border-width: var(--border-width-input-focused, 2px);
+			box-shadow: 0 0 0 2px var(--color-main-background) !important;
+			// Reset padding offset when focused
+			--input-border-width-offset: 0px;
+		}
 	}
 
 	[data-theme-light],

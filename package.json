@@ -1,6 +1,6 @@
 {
   "name": "@nextcloud/vue",
-  "version": "8.22.0",
+  "version": "8.23.1",
   "description": "Nextcloud vue components",
   "keywords": [
     "vuejs",
@@ -22,8 +22,8 @@
     "lint:fix": "eslint --ext .js,.vue src --fix",
     "test": "TZ=UTC jest --verbose --color",
     "test:coverage": "TZ=UTC jest --verbose --coverage --no-cache",
-    "stylelint": "stylelint src/**/*.vue src/**/*.scss src/**/*.css",
-    "stylelint:fix": "stylelint src/**/*.vue src/**/*.scss src/**/*.css --fix",
+    "stylelint": "stylelint \"src/**/*.vue\" \"src/**/*.scss\" \"src/**/*.css\"",
+    "stylelint:fix": "stylelint \"src/**/*.vue\" \"src/**/*.scss\" \"src/**/*.css\" --fix",
     "styleguide": "vue-styleguidist server",
     "styleguide:build": "vue-styleguidist build",
     "cypress": "TZ=UTC cypress run --component",
@@ -55,6 +55,22 @@
     "./dist/Composables/*.js": {
       "import": "./dist/Composables/*.mjs",
       "require": "./dist/Composables/*.cjs"
+    },
+    "./components/*": {
+      "import": "./dist/Components/*.mjs",
+      "require": "./dist/Components/*.cjs"
+    },
+    "./composables/*": {
+      "import": "./dist/Composables/*.mjs",
+      "require": "./dist/Composables/*.cjs"
+    },
+    "./directives/*": {
+      "import": "./dist/Directives/*.mjs",
+      "require": "./dist/Directives/*.cjs"
+    },
+    "./functions/*": {
+      "import": "./dist/Functions/*.mjs",
+      "require": "./dist/Functions/*.cjs"
     }
   },
   "files": [
@@ -72,7 +88,7 @@
     "@nextcloud/capabilities": "^1.2.0",
     "@nextcloud/event-bus": "^3.3.1",
     "@nextcloud/initial-state": "^2.2.0",
-    "@nextcloud/l10n": "^3.1.0",
+    "@nextcloud/l10n": "^3.2.0",
     "@nextcloud/logger": "^3.0.2",
     "@nextcloud/router": "^3.0.1",
     "@nextcloud/sharing": "^0.2.3",
@@ -82,7 +98,7 @@
     "@vueuse/core": "^11.0.0",
     "clone": "^2.1.2",
     "debounce": "^2.2.0",
-    "dompurify": "^3.0.5",
+    "dompurify": "^3.2.4",
     "emoji-mart-vue-fast": "^15.0.1",
     "escape-html": "^1.0.3",
     "floating-vue": "^1.0.0-beta.19",
@@ -90,10 +106,10 @@
     "linkify-string": "^4.0.0",
     "md5": "^2.3.0",
     "rehype-external-links": "^3.0.0",
-    "rehype-highlight": "^7.0.1",
+    "rehype-highlight": "^7.0.2",
     "rehype-react": "^7.1.2",
     "remark-breaks": "^4.0.0",
-    "remark-gfm": "^4.0.0",
+    "remark-gfm": "^4.0.1",
     "remark-parse": "^11.0.0",
     "remark-rehype": "^11.0.0",
     "splitpanes": "^2.4.1",
@@ -126,8 +142,8 @@
     "@nextcloud/browserslist-config": "^3.0.1",
     "@nextcloud/eslint-config": "^8.4.1",
     "@nextcloud/stylelint-config": "^3.0.1",
-    "@nextcloud/vite-config": "^1.2.2",
-    "@nextcloud/webpack-vue-config": "^6.0.1",
+    "@nextcloud/vite-config": "^1.5.2",
+    "@nextcloud/webpack-vue-config": "^6.2.0",
     "@testing-library/cypress": "^10.0.2",
     "@types/gettext-parser": "^4.0.4",
     "@types/jest": "^29.5.5",
@@ -149,9 +165,10 @@
     "jest-raw-loader": "^1.0.1",
     "jest-serializer-vue": "^3.1.0",
     "jest-transform-stub": "^2.0.0",
-    "node-polyfill-webpack-plugin": "^3.0.0",
     "resolve-url-loader": "^5.0.0",
     "sanitize-filename": "^1.6.3",
+    "sass": "^1.84.0",
+    "stylelint-use-logical": "^2.1.2",
     "ts-node": "^10.9.1",
     "typescript": "^5.0.4",
     "url-loader": "^4.1.1",
@@ -160,7 +177,7 @@
     "vue-material-design-icons": "file:../nc-vue-material-design-icons/dist",
     "vue-styleguidist": "~4.72.0",
     "vue-template-compiler": "^2.7.16",
-    "webpack": "^5.88.1",
+    "webpack": "^5.97.1",
     "webpack-merge": "^6.0.1"
   },
   "browserslist": [

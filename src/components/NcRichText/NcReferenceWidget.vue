@@ -239,7 +239,7 @@ export default {
 
 	&.full-width {
 		width: var(--widget-full-width, 100%) !important;
-		left: calc( (var(--widget-full-width, 100%) - 100%) / 2 * -1);
+		inset-inline-start: calc( (var(--widget-full-width, 100%) - 100%) / 2 * -1);
 		position: relative;
 	}
 }
@@ -318,7 +318,7 @@ export default {
 	.toggle-interactive--button {
 		position: absolute;
 		bottom: var(--default-grid-baseline);
-		right: var(--default-grid-baseline);
+		inset-inline-end: var(--default-grid-baseline);
 		z-index: 10000;
 	}
 }

@@ -32,6 +32,10 @@ module.exports = async () => {
 			path.join(__dirname, 'styleguide/assets/additional.css'),
 			path.join(__dirname, 'styleguide/assets/styleguide.css'),
 		],
+
+		assetsDir: path.join(__dirname, 'styleguide/assets/img'),
+		styleguideDir: 'styleguide/build',
+
 		pagePerSection: true,
 		minimize: true,
 		verbose: false,
@@ -62,7 +66,7 @@ module.exports = async () => {
 		components: 'src/components/*/*.vue',
 		getComponentPathLine(componentPath) {
 			const name = path.basename(componentPath, '.vue')
-			return `import ${name} from '@nextcloud/vue/dist/Components/${name}.js'`
+			return `import ${name} from '@nextcloud/vue/components/${name}'`
 		},
 
 		compilerConfig: {
@@ -80,7 +84,7 @@ module.exports = async () => {
 				name: 'Versions',
 				sections: [
 					{
-						name: 'next v9.x (Nextcloud 28+ on Vue 3)',
+						name: 'next v9.x (Nextcloud 30+ on Vue 3)',
 						href: 'https://next--nextcloud-vue-components.netlify.app',
 					},
 					{

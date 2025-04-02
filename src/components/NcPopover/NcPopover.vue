@@ -157,8 +157,8 @@ See: https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/
 		</NcPopoverTriggerProvider>
 
 		<!-- This will be the content of the popover -->
-		<template #popper>
-			<slot />
+		<template #popper="slotProps">
+			<slot name="default" v-bind="slotProps" />
 		</template>
 	</Dropdown>
 </template>
@@ -169,6 +169,11 @@ import { Dropdown } from 'floating-vue'
 import { createFocusTrap } from 'focus-trap'
 import { getTrapStack } from '../../utils/focusTrap.js'
 import NcPopoverTriggerProvider from './NcPopoverTriggerProvider.vue'
+
+/**
+ * @typedef {import('focus-trap').FocusTargetValueOrFalse} FocusTargetValueOrFalse
+ * @typedef {FocusTargetValueOrFalse|() => FocusTargetValueOrFalse} SetReturnFocus
+ */
 
 export default {
 	name: 'NcPopover',
@@ -214,11 +219,11 @@ export default {
 		/**
 		 * Set element to return focus to after focus trap deactivation
 		 *
-		 * @type {import('focus-trap').FocusTargetValueOrFalse}
+		 * @type {SetReturnFocus}
 		 */
 		setReturnFocus: {
 			default: undefined,
-			type: [HTMLElement, SVGElement, String, Boolean],
+			type: [HTMLElement, SVGElement, String, Boolean, Function],
 		},
 	},
 
@@ -371,29 +376,29 @@ export default {
 			}
 		},
 
-		afterShow() {
+		async afterShow() {
 			this.removeFloatingVueAriaDescribedBy()
 
-			this.$nextTick(() => {
-				/**
-				 * Triggered after the tooltip was visually displayed.
-				 *
-				 * This is different from the 'show' and 'apply-show' which
-				 * run earlier than this where there is no guarantee that the
-				 * tooltip is already visible and in the DOM.
-				 */
-				this.$emit('after-show')
-				this.useFocusTrap()
-				this.addEscapeStopPropagation()
-			})
+			await this.$nextTick()
+			await this.useFocusTrap()
+			this.addEscapeStopPropagation()
+
+			/**
+			 * Triggered after the tooltip was visually displayed.
+			 *
+			 * This is different from the 'show' and 'apply-show' which
+			 * run earlier than this where there is no guarantee that the
+			 * tooltip is already visible and in the DOM.
+			 */
+			this.$emit('after-show')
 		},
 		afterHide() {
+			this.clearFocusTrap()
+			this.clearEscapeStopPropagation()
 			/**
 			 * Triggered after the tooltip was visually hidden.
 			 */
 			this.$emit('after-hide')
-			this.clearFocusTrap()
-			this.clearEscapeStopPropagation()
 		},
 	},
 }
@@ -429,6 +434,9 @@ export default {
 }
 
 $arrow-width: 10px;
+// Move the arrow just slightly inside the popover
+// To prevent a visual gap on page scaling
+$arrow-position: $arrow-width - 1px;
 
 .v-popper--theme-dropdown {
 	&.v-popper__popper {
@@ -437,7 +445,18 @@ $arrow-width: 10px;
 		left: 0;
 		display: block !important;
 
-		filter: drop-shadow(0 1px 10px var(--color-box-shadow));
+		.v-popper__wrapper {
+			/*
+			 * In theory, "filter: drop-shadow" would look better here with arrow shadow.
+			 * In fact, in results in a blurry popover in Chromium on scaling.
+			 * The hypothesis is that "filter" creates a new composition layer,
+			 * and with GPU acceleration requires the previous layers content to be rasterized.
+			 * In combination with translate3d from floating-vue, it makes Chromium to first render and rasterize the popover
+			 * and then apply scaling, which results in a blurry popover.
+			 */
+			box-shadow: 0 1px 10px var(--color-box-shadow);
+			border-radius: var(--border-radius-large);
+		}
 
 		.v-popper__inner {
 			padding: 0;
@@ -458,25 +477,25 @@ $arrow-width: 10px;
 		}
 
 		&[data-popper-placement^='top'] .v-popper__arrow-container {
-			bottom: -$arrow-width;
+			bottom: -$arrow-position;
 			border-bottom-width: 0;
 			border-top-color: var(--color-main-background);
 		}
 
 		&[data-popper-placement^='bottom'] .v-popper__arrow-container {
-			top: -$arrow-width;
+			top: -$arrow-position;
 			border-top-width: 0;
 			border-bottom-color: var(--color-main-background);
 		}
 
 		&[data-popper-placement^='right'] .v-popper__arrow-container {
-			left: -$arrow-width;
+			left: -$arrow-position;
 			border-left-width: 0;
 			border-right-color: var(--color-main-background);
 		}
 
 		&[data-popper-placement^='left'] .v-popper__arrow-container {
-			right: -$arrow-width;
+			right: -$arrow-position;
 			border-right-width: 0;
 			border-left-color: var(--color-main-background);
 		}

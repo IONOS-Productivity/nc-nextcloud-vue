@@ -9,6 +9,19 @@ updates:
       interval: daily
       timezone: Europe/Paris
     open-pull-requests-limit: 10
+    versioning-strategy: "increase"
+    labels:
+    - 3. to review
+    - dependencies
+
+  - package-ecosystem: npm
+    directory: "/"
+    target-branch: next
+    schedule:
+      interval: daily
+      timezone: Europe/Paris
+    open-pull-requests-limit: 10
+    versioning-strategy: "increase"
     labels:
     - 3. to review
     - dependencies
@@ -16,7 +29,7 @@ updates:
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
-      interval: daily
+      interval: weekly
       timezone: Europe/Paris
     open-pull-requests-limit: 10
     labels:
