@@ -1526,31 +1526,6 @@ export default {
 			return this.$refs.menu.querySelectorAll(focusableSelector)
 		},
 		/**
-		 * Focus nearest focusable item on mouse move.
-		 * DO NOT change the focus if the target is already focused
-		 * this will prevent issues with input being unfocused
-		 * on mouse move
-		 * @param {PointerEvent} event - The mouse move event
-		 */
-		onMouseFocusAction(event) {
-			if (document.activeElement === event.target) {
-				return
-			}
-
-			const menuItem = event.target.closest('li')
-			if (menuItem && this.$refs.menu.contains(menuItem)) {
-				const focusableItem = menuItem.querySelector(focusableSelector)
-				if (focusableItem) {
-					const focusList = this.getFocusableMenuItemElements()
-					const focusIndex = [...focusList].indexOf(focusableItem)
-					if (focusIndex > -1) {
-						this.focusIndex = focusIndex
-						this.focusAction()
-					}
-				}
-			}
-		},
-		/**
 		 * Dispatches the keydown listener to different handlers
 		 *
 		 * @param {object} event The keydown event
@@ -1969,7 +1944,6 @@ export default {
 						},
 						on: {
 							keydown: this.onKeydown,
-							mousemove: this.onMouseFocusAction,
 						},
 						ref: 'menu',
 					}, [
@@ -2066,11 +2040,7 @@ export default {
 .action-items {
 	display: flex;
 	align-items: center;
-
-	// Spacing between buttons
-	& > button {
-		margin-right: calc($icon-margin / 2);
-	}
+	gap: calc($icon-margin / 2);
 }
 
 .action-item {
@@ -2119,7 +2089,6 @@ export default {
 // the popover__inner for actions only.
 .v-popper--theme-dropdown.v-popper__popper.action-item__popper .v-popper__wrapper {
 	border-radius: var(--border-radius-large);
-	overflow: hidden;
 
 	.v-popper__inner {
 		border-radius: var(--border-radius-large);

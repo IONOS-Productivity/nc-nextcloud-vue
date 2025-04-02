@@ -233,13 +233,9 @@ export default {
 	/* checkbox/radio fixes */
 	&__checkbox {
 		position: absolute;
-		top: auto;
-		left: -10000px;
-
-		overflow: hidden;
-
-		width: 1px;
-		height: 1px;
+		inset-inline-start: 0 !important;
+		z-index: -1;
+		opacity: 0;
 	}
 
 	&__label {
@@ -248,7 +244,7 @@ export default {
 
 		width: 100%;
 		padding: 0 !important;
-		padding-right: $icon-margin !important;
+		padding-inline-end: $icon-margin !important;
 
 		&::before {
 			margin-block: 0 !important;

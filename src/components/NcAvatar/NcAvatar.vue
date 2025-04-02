@@ -14,7 +14,7 @@
 ### Avatar with image
 
 ```vue
-	<NcAvatar url="https://nextcloud.com/wp-content/themes/next/assets/img/common/nextcloud-square-logo.png" />
+	<NcAvatar url="favicon-touch.png" />
 ```
 
 ### Avatar with material design icon
@@ -153,6 +153,7 @@ export default {
 </docs>
 <template>
 	<span ref="main"
+		:title="tooltip"
 		v-click-outside="closeMenu"
 		:class="{
 			'avatardiv--unknown': userDoesNotExist,
@@ -177,7 +178,6 @@ export default {
 			type="tertiary-no-background"
 			class="action-item action-item__menutoggle"
 			:aria-label="avatarAriaLabel"
-			:title="tooltip"
 			@click="toggleMenu">
 			<template #icon>
 				<NcLoadingIcon v-if="contactsMenuLoading" />
@@ -191,7 +191,6 @@ export default {
 			:container="menuContainer"
 			:open.sync="contactsMenuOpenState"
 			:aria-label="avatarAriaLabel"
-			:title="tooltip"
 			@click="toggleMenu">
 			<component :is="item.ncActionComponent"
 				v-for="(item, key) in menu"
@@ -891,7 +890,7 @@ export default {
 	.avatardiv__user-status {
 		box-sizing: border-box;
 		position: absolute;
-		right: -4px;
+		inset-inline-end: -4px;
 		bottom: -4px;
 		min-height: 14px;
 		min-width: 14px;
