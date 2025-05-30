@@ -78,6 +78,11 @@ jobs:
 
       - name: Install dependencies & build l10n
         run: |
+          # Replace locally linked npm packages with the original ones
+          # to ensure the workflow works with the same versions as in the server repository.
+          # https://github.com/nextcloud-libraries/nextcloud-vue/blob/main/package.json
+          npm install @mdi/svg@^7.4.47 @mdi/js@^7.4.47 vue-material-design-icons@5.3.1 --save-dev
+
           npm ci
           npm run l10n:extract --if-present
 
