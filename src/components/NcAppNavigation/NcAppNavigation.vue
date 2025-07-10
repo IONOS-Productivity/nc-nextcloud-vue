@@ -56,8 +56,8 @@
 </template>
 
 <script>
-	import IconCheck from 'vue-material-design-icons/Check'
-	import IconCog from 'vue-material-design-icons/Cog'
+	import IconCheck from 'vue-material-design-icons/Check.vue'
+	import IconCog from 'vue-material-design-icons/Cog.vue'
 
 	export default {
 		components: {
@@ -173,7 +173,7 @@ import { emit, subscribe, unsubscribe } from '@nextcloud/event-bus'
 import { tabbable } from 'tabbable'
 import Vue from 'vue'
 
-import { getTrapStack } from '../../utils/focusTrap.js'
+import { getTrapStack } from '../../utils/focusTrap.ts'
 import { logger } from '../../utils/logger.ts'
 import { useHotKey } from '../../composables/useHotKey/index.js'
 import { useIsMobile } from '../../composables/useIsMobile/index.js'
@@ -346,7 +346,7 @@ export default {
 
 		isFocusWithinNavigation() {
 			const activeElement = document.activeElement
-			return this.$refs.appNavigationContainer.contains(activeElement)
+			return this.$refs.appNavigationContainer?.contains(activeElement)
 		},
 	},
 }

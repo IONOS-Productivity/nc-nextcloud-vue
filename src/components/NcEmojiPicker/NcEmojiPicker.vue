@@ -162,7 +162,7 @@ This component allows the user to pick an emoji.
 						:palette="skinTonePalette"
 						:value="currentColor.color"
 						@update:value="onChangeSkinTone">
-						<NcButton :aria-label="t('Skin tone')" type="tertiary-no-background">
+						<NcButton :aria-label="t('Skin tone')" variant="tertiary-no-background">
 							<template #icon>
 								<IconCircle :style="{ color: currentColor.color }" :title="currentColor.name" :size="20" />
 							</template>
@@ -195,8 +195,10 @@ This component allows the user to pick an emoji.
 
 <script>
 import { Picker, Emoji, EmojiIndex } from 'emoji-mart-vue-fast'
+import { isFocusable } from 'tabbable'
 import { t } from '../../l10n.js'
 import { getCurrentSkinTone, setCurrentSkinTone } from '../../functions/emoji/emoji.ts'
+import { useTrapStackControl } from '../../composables/useTrapStackControl.ts'
 import { Color } from '../../utils/GenColors.js'
 
 import data from 'emoji-mart-vue-fast/data/all.json'
@@ -354,6 +356,12 @@ export default {
 		},
 	},
 
+	created() {
+		// Component has its own custom focus management
+		// The global focus trap stack should be paused
+		useTrapStackControl(() => this.open)
+	},
+
 	methods: {
 		t,
 
@@ -401,7 +409,10 @@ export default {
 
 		afterHide() {
 			// Manually return focus to the trigger button, as we disabled focus-trap
-			this.$refs.popover.$el.querySelector('button, [role="button"]')?.focus()
+			// But only if there is no focus target outside the picker, for example, input element that received focus by click closing the emoji picker
+			if (!document.activeElement || this.$refs.picker.$el.contains(document.activeElement) || !isFocusable(document.activeElement)) {
+				this.$refs.popover.$el.querySelector('button, [role="button"]')?.focus()
+			}
 		},
 
 		/**

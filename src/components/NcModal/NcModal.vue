@@ -84,7 +84,7 @@ export default {
 				<NcButton
 					:disabled="!firstName || !lastName || !pizza"
 					@click="closeModal"
-					type="primary">
+					variant="primary">
 					Submit
 				</NcButton>
 			</div>
@@ -220,9 +220,9 @@ export default {
 					<div class="icons-menu">
 						<!-- Play-pause toggle -->
 						<button v-if="hasNext && enableSlideshow"
-							v-tooltip.auto="playPauseName"
 							:class="{ 'play-pause-icons--paused': slideshowPaused }"
 							class="play-pause-icons"
+							:title="playPauseName"
 							type="button"
 							@click="togglePlayPause">
 							<!-- Play/pause icons -->
@@ -258,10 +258,10 @@ export default {
 						</NcActions>
 
 						<!-- Close modal -->
-						<NcButton v-if="canClose && !closeButtonContained"
+						<NcButton v-if="!noClose && canClose && !closeButtonContained"
 							:aria-label="closeButtonAriaLabel"
 							class="header-close"
-							type="tertiary"
+							variant="tertiary"
 							@click="close">
 							<template #icon>
 								<Close :size="20" />
@@ -283,12 +283,14 @@ export default {
 					<!-- Navigation button -->
 					<transition name="fade-visibility" appear>
 						<NcButton v-show="hasPrevious"
-							type="tertiary-no-background"
-							class="prev"
 							:aria-label="prevButtonAriaLabel"
+							class="prev"
+							variant="tertiary-no-background"
 							@click="previous">
 							<template #icon>
-								<ChevronLeft :size="40" />
+								<NcIconSvgWrapper directional
+									:path="mdiChevronLeft"
+									:size="40" />
 							</template>
 						</NcButton>
 					</transition>
@@ -300,10 +302,10 @@ export default {
 							<slot />
 						</div>
 						<!-- Close modal -->
-						<NcButton v-if="canClose && closeButtonContained"
-							type="tertiary"
-							class="modal-container__close"
+						<NcButton v-if="!noClose && canClose && closeButtonContained"
 							:aria-label="closeButtonAriaLabel"
+							class="modal-container__close"
+							variant="tertiary"
 							@click="close">
 							<template #icon>
 								<Close :size="20" />
@@ -314,12 +316,14 @@ export default {
 					<!-- Navigation button -->
 					<transition name="fade-visibility" appear>
 						<NcButton v-show="hasNext"
-							type="tertiary-no-background"
-							class="next"
 							:aria-label="nextButtonAriaLabel"
+							class="next"
+							variant="tertiary-no-background"
 							@click="next">
 							<template #icon>
-								<ChevronRight :size="40" />
+								<NcIconSvgWrapper directional
+									:path="mdiChevronRight"
+									:size="40" />
 							</template>
 						</NcButton>
 					</transition>
@@ -331,19 +335,19 @@ export default {
 
 <script>
 import { useSwipe } from '@vueuse/core'
+import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
 import { createFocusTrap } from 'focus-trap'
 import Vue from 'vue'
 
-import { getTrapStack } from '../../utils/focusTrap.js'
-import { t } from '../../l10n.js'
 import GenRandomId from '../../utils/GenRandomId.js'
-import NcActions from '../NcActions/index.js'
-import NcButton from '../../components/NcButton/index.js'
-import Timer from '../../utils/Timer.js'
-import Tooltip from '../../directives/Tooltip/index.js'
+import { getTrapStack } from '../../utils/focusTrap.ts'
+import { t } from '../../l10n.js'
 
-import ChevronLeft from 'vue-material-design-icons/ChevronLeft.vue'
-import ChevronRight from 'vue-material-design-icons/ChevronRight.vue'
+import NcActions from '../NcActions/index.js'
+import NcButton from '../NcButton/index.js'
+import NcIconSvgWrapper from '../NcIconSvgWrapper/index.js'
+import Timer from '../../utils/Timer.js'
+
 import Close from 'vue-material-design-icons/Close.vue'
 import Pause from 'vue-material-design-icons/Pause.vue'
 import Play from 'vue-material-design-icons/Play.vue'
@@ -352,17 +356,12 @@ export default {
 	name: 'NcModal',
 
 	components: {
-		NcActions,
-		ChevronLeft,
-		ChevronRight,
 		Close,
 		Pause,
 		Play,
+		NcActions,
 		NcButton,
-	},
-
-	directives: {
-		tooltip: Tooltip,
+		NcIconSvgWrapper,
 	},
 
 	props: {
@@ -451,7 +450,18 @@ export default {
 		},
 
 		/**
-		 * Declare if the modal can be closed
+		 * Do not show the close button for the dialog.
+		 * @default false
+		 */
+		noClose: {
+			type: Boolean,
+			default: false,
+		},
+
+		/**
+		 * Set to false to no show a close button on the dialog
+		 * @deprecated - Use `noClose` instead. Will be removed in v9.
+		 * @default true
 		 */
 		canClose: {
 			type: Boolean,
@@ -551,6 +561,13 @@ export default {
 		'update:show',
 	],
 
+	setup() {
+		return {
+			mdiChevronLeft,
+			mdiChevronRight,
+		}
+	},
+
 	data() {
 		return {
 			mc: null,
@@ -575,7 +592,7 @@ export default {
 		 * True if there are any buttons shown on the backdrop or a name (for accessibility)
 		 */
 		forceDarkBackdrop() {
-			return (this.canClose && !this.closeButtonContained)
+			return (!this.noClose && this.canClose && !this.closeButtonContained)
 				|| this.hasNext
 				|| this.hasPrevious
 				|| this.modalName !== ''
@@ -703,7 +720,7 @@ export default {
 		},
 		close(data) {
 			// do not fire event if forbidden
-			if (this.canClose) {
+			if (!this.noClose && this.canClose) {
 				// We set internalShow here, so the out transitions properly run before the component is destroyed
 				this.internalShow = false
 				this.$emit('update:show', false)
@@ -880,7 +897,7 @@ export default {
 	position: fixed;
 	z-index: 9998;
 	top: 0;
-	left: 0;
+	inset-inline-start: 0;
 	display: block;
 	width: 100%;
 	height: 100%;
@@ -899,8 +916,7 @@ export default {
 	position: absolute;
 	z-index: 10001;
 	top: 0;
-	right: 0;
-	left: 0;
+	inset-inline: 0 0;
 	// prevent vue show to use display:none and resetting
 	// the circle animation loop
 	display: flex !important;
@@ -926,14 +942,14 @@ export default {
 	// On wider screens the name can be centered
 	@media only screen and (min-width: $breakpoint-mobile) {
 		&__name {
-			padding-left: calc(var(--default-clickable-area) * 3); // maximum actions is 3
+			padding-inline-start: calc(var(--default-clickable-area) * 3); // maximum actions is 3
 			text-align: center;
 		}
 	}
 
 	.icons-menu {
 		position: absolute;
-		right: 0;
+		inset-inline-end: 0;
 		display: flex;
 		align-items: center;
 		justify-content: flex-end;
@@ -1034,10 +1050,10 @@ export default {
 	}
 
 	.prev {
-		left: 2px;
+		inset-inline-start: 2px;
 	}
 	.next {
-		right: 2px;
+		inset-inline-end: 2px;
 	}
 
 	/* Content */
@@ -1165,7 +1181,7 @@ $pi: 3.14159265358979;
 	.progress-ring {
 		position: absolute;
 		top: 0;
-		left: 0;
+		inset-inline-start: 0;
 		transform: rotate(-90deg);
 		.progress-ring__circle {
 			transition: 100ms stroke-dashoffset;

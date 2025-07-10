@@ -242,7 +242,6 @@ export default {
 	<div class="rich-contenteditable">
 		<div :id="id"
 			ref="contenteditable"
-			v-tooltip="tooltipString"
 			:class="{
 				'rich-contenteditable__input--empty': isEmptyValue,
 				'rich-contenteditable__input--multiline': multiline,
@@ -261,6 +260,7 @@ export default {
 			:aria-controls="tributeId"
 			:aria-expanded="isAutocompleteOpen ? 'true' : 'false'"
 			:aria-activedescendant="autocompleteActiveId"
+			:title="tooltipString"
 			v-bind="$attrs"
 			v-on="listeners"
 			@focus="moveCursorToEnd"
@@ -285,10 +285,9 @@ export default {
 </template>
 
 <script>
-import { t } from '../../l10n.js'
+import { n, t } from '../../l10n.js'
 import NcAutoCompleteResult from './NcAutoCompleteResult.vue'
 import richEditor from '../../mixins/richEditor/index.js'
-import Tooltip from '../../directives/Tooltip/index.js'
 import { emojiSearch, emojiAddRecent } from '../../functions/emoji/index.ts'
 import { searchProvider, getLinkWithPicker } from '../NcRichText/index.js'
 
@@ -311,10 +310,6 @@ smilesCharacters.forEach((char) => {
 
 export default {
 	name: 'NcRichContenteditable',
-
-	directives: {
-		tooltip: Tooltip,
-	},
 
 	mixins: [richEditor],
 
@@ -504,11 +499,7 @@ export default {
 			if (!this.isOverMaxlength) {
 				return null
 			}
-			return {
-				content: t('Message limit of {count} characters reached', { count: this.maxlength }),
-				shown: true,
-				trigger: 'manual',
-			}
+			return n('Message limit of %n character reached', 'Message limit of %n characters reached', this.maxlength)
 		},
 
 		/**
@@ -1107,6 +1098,12 @@ export default {
 			border-radius: var(--border-radius);
 			background-color: var(--color-background-dark);
 		}
+
+		&--overflow,
+		&--overflow:hover {
+			// we need important to override server styles
+			border-color: var(--color-error) !important;
+		}
 	}
 }
 
@@ -1118,7 +1115,7 @@ export default {
 	overflow: auto;
 	// Hide container root element while initializing
 	position: absolute;
-	/* stylelint-disable csstools/use-logical */ /* upstream logic */
+	/* stylelint-disable-next-line csstools/use-logical */ /* upstream logic */
 	left: -100vw;
 	// Space it out a bit from the text
 	margin: var(--default-grid-baseline) 0;

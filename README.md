@@ -19,8 +19,8 @@
 
 | Version        | Target                | Documentation                                         |
 |----------------|-----------------------|-------------------------------------------------------|
-| v9.x [next]    | Nextcloud 30+ (Vue 3) | https://next--nextcloud-vue-components.netlify.app    |
-| v8.x [master]  | Nextcloud 28+ (Vue 2) | https://nextcloud-vue-components.netlify.app          |
+| v9.x [main]    | Nextcloud 30+ (Vue 3) | https://nextcloud-vue-components.netlify.app          |
+| v8.x [stable8] | Nextcloud 28+ (Vue 2) | https://stable8--nextcloud-vue-components.netlify.app |
 | v7.x [stable7] | Nextcloud 25 - 27     | https://stable7--nextcloud-vue-components.netlify.app |
 | v6.x [stable6] | Nextcloud 24 - 25     | https://stable6--nextcloud-vue-components.netlify.app |
 
@@ -163,8 +163,12 @@ index 0e3a6a705d..416b8b0fb9 100644
   This will return a new version name, make sure it matches what you expect
 - Generate the changelog content from the [release](https://github.com/nextcloud-libraries/nextcloud-vue/releases) page.
   Create a draft release, select the previous tag, click `generate` then paste the content to the `CHANGELOG.md` file
-  1. use the the version as tag AND title (e.g `v4.0.1`)
-  2. add the changelog content as description (https://github.com/nextcloud-libraries/nextcloud-vue/releases)
+  1. adjust the links to the merged pull requests and authors so that the changelog also works outside of GitHub
+     by running `npm run prerelease:format-changelog`.
+     This will apply this regex: `by @([^ ]+) in ((https://github.com/)nextcloud-libraries/nextcloud-vue/pull/(\d+))`
+     Which this as the replacement: `[\#$4]($2) \([$1]($3$1)\)`
+  2. use the the version as tag AND title (e.g `v4.0.1`)
+  3. add the changelog content as description (https://github.com/nextcloud-libraries/nextcloud-vue/releases)
 - Commit, push and create PR
 - Get your PR reviewed and merged
 - Create a milestone with the follow-up version at https://github.com/nextcloud-libraries/nextcloud-vue/milestones

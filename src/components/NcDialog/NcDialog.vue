@@ -95,6 +95,7 @@ Note that this is not possible if the dialog contains a navigation!
 			name="Choose a name"
 			:open.sync="showDialog"
 			@submit="currentName = newName"
+			@reset="newName = ''"
 			@closing="newName = ''">
 			<NcTextField label="New name"
 				placeholder="Min. 6 characters"
@@ -115,6 +116,10 @@ export default {
 			newName: '',
 			currentName: 'none yet.',
 			buttons: [
+				{
+					label: 'Reset',
+					nativeType: 'reset',
+				},
 				{
 					label: 'Submit',
 					type: 'primary',
@@ -244,7 +249,7 @@ export default {
 					<NcDialogButton v-for="(button, idx) in buttons"
 						:key="idx"
 						v-bind="button"
-						@click="handleButtonClose" />
+						@click="(_, result) => handleButtonClose(button, result)" />
 				</slot>
 			</div>
 		</component>
@@ -338,7 +343,17 @@ export default defineComponent({
 		},
 
 		/**
+		 * Do not show the close button for the dialog.
+		 * @default false
+		 */
+		noClose: {
+			type: Boolean,
+			default: false,
+		},
+
+		/**
 		 * Set to false to no show a close button on the dialog
+		 * @deprecated - Use `noClose` instead. Will be removed in v9.
 		 * @default true
 		 */
 		canClose: {
@@ -375,7 +390,7 @@ export default defineComponent({
 		},
 
 		/**
-		 * Optionally pass additionaly classes which will be set on the navigation for custom styling
+		 * Optionally pass additional classes which will be set on the navigation for custom styling
 		 * @default ''
 		 * @example
 		 * ```html
@@ -419,7 +434,7 @@ export default defineComponent({
 		},
 
 		/**
-		 * Optionally pass additionaly classes which will be set on the content wrapper for custom styling
+		 * Optionally pass additional classes which will be set on the content wrapper for custom styling
 		 * @default ''
 		 */
 		contentClasses: {
@@ -429,7 +444,7 @@ export default defineComponent({
 		},
 
 		/**
-		 * Optionally pass additionaly classes which will be set on the dialog itself
+		 * Optionally pass additional classes which will be set on the dialog itself
 		 * (the default `class` attribute will be set on the modal wrapper)
 		 * @default ''
 		 */
@@ -509,6 +524,16 @@ export default defineComponent({
 					/** Forwarded HTMLFormElement submit event (only if `is-form` is set) */
 					emit('submit', event)
 				},
+				/**
+				 * @param {Event} event Form submit event
+				 */
+				reset(event) {
+					event.preventDefault()
+					/**
+					 * Forwarded HTMLFormElement reset event (only if `is-form` is set).
+					 */
+					emit('reset', event)
+				},
 			}
 			: {},
 		)
@@ -521,12 +546,14 @@ export default defineComponent({
 		// Because NcModal does not emit `close` when show prop is changed
 		/**
 		 * Handle clicking a dialog button -> should close
-		 * @param {MouseEvent} event The click event
+		 * @param {MouseEvent} button The button that was clicked
 		 * @param {unknown} result Result of the callback function
 		 */
-		const handleButtonClose = (event, result) => {
-			// Skip close if invalid dialog
-			if (dialogTagName.value === 'form' && !dialogElement.value.reportValidity()) {
+		function handleButtonClose(button, result) {
+			// Skip close on submit if invalid dialog
+			if (button.nativeType === 'submit'
+				&& dialogTagName.value === 'form'
+				&& !dialogElement.value.reportValidity()) {
 				return
 			}
 			handleClosing(result)
@@ -561,7 +588,7 @@ export default defineComponent({
 		 * Properties to pass to the underlying NcModal
 		 */
 		const modalProps = computed(() => ({
-			canClose: props.canClose,
+			noClose: props.noClose || !props.canClose,
 			container: props.container === undefined ? 'body' : props.container,
 			// we do not pass the name as we already have the name as the headline
 			// name: props.name,
