@@ -83,7 +83,13 @@ jobs:
         env:
           CYPRESS_INSTALL_BINARY: 0
         run: |
+          # Replace locally linked npm packages with the original ones
+          # to ensure the workflow works with the same versions as in the server repository.
+          # https://github.com/nextcloud-libraries/nextcloud-vue/blob/main/package.json
+          npm install @mdi/svg@^7.4.47 @mdi/js@^7.4.47 vue-material-design-icons@5.3.1 --save-dev
+
           npm ci
+
           npm run build --if-present
 
       - name: Test
@@ -93,7 +99,7 @@ jobs:
         run: npm run test:coverage --if-present
 
       - name: Collect coverage
-        uses: codecov/codecov-action@13ce06bfc6bbe3ecf90edbbf1bc32fe5978ca1d3 # v5.3.1
+        uses: codecov/codecov-action@ad3126e916f78f00edff4ed0317cf185271ccc2d # v5.4.2
         with:
           files: ./coverage/lcov.info
 

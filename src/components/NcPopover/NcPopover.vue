@@ -167,14 +167,13 @@ See: https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/
 import Vue from 'vue'
 import { Dropdown } from 'floating-vue'
 import { createFocusTrap } from 'focus-trap'
-import { getTrapStack } from '../../utils/focusTrap.js'
+import { getTrapStack } from '../../utils/focusTrap.ts'
 import NcPopoverTriggerProvider from './NcPopoverTriggerProvider.vue'
 
 /**
  * @typedef {import('focus-trap').FocusTargetValueOrFalse} FocusTargetValueOrFalse
  * @typedef {FocusTargetValueOrFalse|() => FocusTargetValueOrFalse} SetReturnFocus
  */
-
 export default {
 	name: 'NcPopover',
 
@@ -209,13 +208,25 @@ export default {
 			type: String,
 			default: '',
 		},
+
 		/**
 		 * Enable popover focus trap
+		 *
+		 * @deprecated use noFocusTrap instead
 		 */
 		focusTrap: {
 			type: Boolean,
 			default: true,
 		},
+
+		/**
+		 * Disable the popover focus trap.
+		 */
+		noFocusTrap: {
+			type: Boolean,
+			default: false,
+		},
+
 		/**
 		 * Set element to return focus to after focus trap deactivation
 		 *
@@ -311,11 +322,12 @@ export default {
 		async useFocusTrap() {
 			await this.$nextTick()
 
-			if (!this.focusTrap) {
+			if (this.noFocusTrap || !this.focusTrap) {
 				return
 			}
 
 			const el = this.getPopoverContentElement()
+			el.tabIndex = -1
 
 			if (!el) {
 				return
@@ -329,6 +341,7 @@ export default {
 				allowOutsideClick: true,
 				setReturnFocus: this.setReturnFocus,
 				trapStack: getTrapStack(),
+				fallBackFocus: el,
 			})
 			this.$focusTrap.activate()
 		},
@@ -377,71 +390,83 @@ export default {
 		},
 
 		async afterShow() {
+			this.getPopoverContentElement().addEventListener('transitionend', () => {
+				/**
+				 * Triggered after the tooltip was visually displayed.
+				 *
+				 * This is different from the 'show' and 'apply-show' which
+				 * run earlier than this where there is no guarantee that the
+				 * tooltip is already visible and in the DOM.
+				 */
+				this.$emit('after-show')
+			}, { once: true, passive: true })
+
 			this.removeFloatingVueAriaDescribedBy()
 
 			await this.$nextTick()
 			await this.useFocusTrap()
 			this.addEscapeStopPropagation()
-
-			/**
-			 * Triggered after the tooltip was visually displayed.
-			 *
-			 * This is different from the 'show' and 'apply-show' which
-			 * run earlier than this where there is no guarantee that the
-			 * tooltip is already visible and in the DOM.
-			 */
-			this.$emit('after-show')
 		},
 		afterHide() {
+			this.getPopoverContentElement().addEventListener('transitionend', () => {
+				/**
+				 * Triggered after the tooltip was visually hidden.
+				 *
+				 * This is different from the 'hide' and 'apply-hide' which
+				 * run earlier than this where there is no guarantee that the
+				 * tooltip is already visible and in the DOM.
+				 */
+				this.$emit('after-hide')
+			}, { once: true, passive: true })
+
 			this.clearFocusTrap()
 			this.clearEscapeStopPropagation()
-			/**
-			 * Triggered after the tooltip was visually hidden.
-			 */
-			this.$emit('after-hide')
 		},
 	},
 }
 </script>
 
 <style lang="scss">
-
-.resize-observer {
-	position:absolute;
-	top:0;
-	left:0;
-	z-index:-1;
-	width:100%;
-	height:100%;
-	border:none;
-	background-color:transparent;
-	pointer-events:none;
-	display:block;
-	overflow:hidden;
-	opacity:0
-}
-
-.resize-observer object {
-	display:block;
-	position:absolute;
-	top:0;
-	left:0;
-	height:100%;
-	width:100%;
-	overflow:hidden;
-	pointer-events:none;
-	z-index:-1
-}
-
 $arrow-width: 10px;
 // Move the arrow just slightly inside the popover
 // To prevent a visual gap on page scaling
 $arrow-position: $arrow-width - 1px;
 
+// Size class comes from the floating-vue library we use
+.resize-observer {
+	position: absolute;
+	top: 0;
+	/* stylelint-disable-next-line csstools/use-logical */ /* upstream logic */
+	left: 0;
+	z-index: -1;
+	width: 100%;
+	height: 100%;
+	border: none;
+	background-color: transparent;
+	pointer-events: none;
+	display: block;
+	overflow: hidden;
+	opacity: 0;
+
+	object {
+		display: block;
+		position: absolute;
+		top: 0;
+		/* stylelint-disable-next-line csstools/use-logical */ /* upstream logic */
+		left: 0;
+		height: 100%;
+		width: 100%;
+		overflow: hidden;
+		pointer-events: none;
+		z-index: -1;
+	}
+}
+
 .v-popper--theme-dropdown {
 	&.v-popper__popper {
 		z-index: 100000;
 		top: 0;
+		/* stylelint-disable-next-line csstools/use-logical */ /* upstream logic */
 		left: 0;
 		display: block !important;
 
@@ -478,25 +503,35 @@ $arrow-position: $arrow-width - 1px;
 
 		&[data-popper-placement^='top'] .v-popper__arrow-container {
 			bottom: -$arrow-position;
+			/* stylelint-disable-next-line csstools/use-logical */ /* upstream logic */
 			border-bottom-width: 0;
+			/* stylelint-disable-next-line csstools/use-logical */ /* upstream logic */
 			border-top-color: var(--color-main-background);
 		}
 
 		&[data-popper-placement^='bottom'] .v-popper__arrow-container {
 			top: -$arrow-position;
+			/* stylelint-disable-next-line csstools/use-logical */ /* upstream logic */
 			border-top-width: 0;
+			/* stylelint-disable-next-line csstools/use-logical */ /* upstream logic */
 			border-bottom-color: var(--color-main-background);
 		}
 
 		&[data-popper-placement^='right'] .v-popper__arrow-container {
+			/* stylelint-disable-next-line csstools/use-logical */ /* upstream logic */
 			left: -$arrow-position;
+			/* stylelint-disable-next-line csstools/use-logical */ /* upstream logic */
 			border-left-width: 0;
+			/* stylelint-disable-next-line csstools/use-logical */ /* upstream logic */
 			border-right-color: var(--color-main-background);
 		}
 
 		&[data-popper-placement^='left'] .v-popper__arrow-container {
+			/* stylelint-disable-next-line csstools/use-logical */ /* upstream logic */
 			right: -$arrow-position;
+			/* stylelint-disable-next-line csstools/use-logical */ /* upstream logic */
 			border-right-width: 0;
+			/* stylelint-disable-next-line csstools/use-logical */ /* upstream logic */
 			border-left-color: var(--color-main-background);
 		}
 

@@ -68,13 +68,13 @@ export default {
 		<!-- Trigger -->
 		<NcButton :id="isNav ? triggerId : null"
 			ref="trigger"
-			type="tertiary-no-background"
 			class="header-menu__trigger"
-			:aria-label="ariaLabel"
-			:aria-describedby="description ? descriptionId : null"
 			:aria-controls="`header-menu-${id}`"
+			:aria-describedby="description ? descriptionId : null"
 			:aria-expanded="opened.toString()"
+			:aria-label="ariaLabel"
 			size="large"
+			variant="tertiary-no-background"
 			@click.prevent="toggleMenu">
 			<template #icon>
 				<!-- @slot Icon trigger slot. Make sure the svg path
@@ -110,7 +110,7 @@ import { createFocusTrap } from 'focus-trap'
 
 import GenRandomId from '../../utils/GenRandomId.js'
 import { clickOutsideOptions } from '../../mixins/index.js'
-import { getTrapStack } from '../../utils/focusTrap.js'
+import { getTrapStack } from '../../utils/focusTrap.ts'
 
 import NcButton from '../NcButton/index.js'
 
@@ -319,7 +319,7 @@ export default {
 			this.focusTrap = createFocusTrap(contentContainer, {
 				allowOutsideClick: true,
 				trapStack: getTrapStack(),
-				fallbackFocus: this.$refs.trigger,
+				fallbackFocus: this.$refs.trigger.$el,
 			})
 			this.focusTrap.activate()
 		},

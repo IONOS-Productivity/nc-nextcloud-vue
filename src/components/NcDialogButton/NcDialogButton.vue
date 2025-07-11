@@ -10,8 +10,9 @@ Dialog button component used by NcDialog in the actions slot to display the butt
 <template>
 	<NcButton :aria-label="label"
 		:disabled="disabled"
-		:native-type="nativeType"
 		:type="type"
+		:native-type="nativeType"
+		:variant="variant"
 		@click="handleClick">
 		{{ label }}
 		<template #icon>
@@ -27,15 +28,18 @@ Dialog button component used by NcDialog in the actions slot to display the butt
 
 <script setup>
 import { ref } from 'vue'
+import { t } from '../../l10n.js'
+
 import NcButton from '../NcButton/index.js'
 import NcIconSvgWrapper from '../NcIconSvgWrapper/index.js'
 import NcLoadingIcon from '../NcLoadingIcon/index.js'
-import { t } from '../../l10n.js'
 
 const props = defineProps({
 	/**
 	 * The function that will be called when the button is pressed.
-	 * If the function returns `false` the click is ignored and the dialog will not be closed.
+	 * If the function returns `false` the click is ignored and the dialog will not be closed,
+	 * which is the default behavior of "reset"-buttons.
+	 *
 	 * @type {() => unknown|false|Promise<unknown|false>}
 	 */
 	callback: {
@@ -62,18 +66,21 @@ const props = defineProps({
 	},
 
 	/**
-	 * The button type, see NcButton
-	 * @type {'primary'|'secondary'|'error'|'warning'|'success'}
+	 * The button type, see NcButton.
+	 *
+	 * @deprecated The usage for setting the color variant is deprecated and will be removed with v9.
+	 * @type {'button'|'submit'|'reset'|'primary'|'secondary'|'error'|'warning'|'success'}
 	 */
 	type: {
 		type: String,
 		required: false,
 		default: 'secondary',
-		validator: (type) => typeof type === 'string' && ['primary', 'secondary', 'tertiary', 'error', 'warning', 'success'].includes(type),
+		validator: (type) => typeof type === 'string' && ['button', 'submit', 'reset', 'primary', 'secondary', 'tertiary', 'error', 'warning', 'success'].includes(type),
 	},
 
 	/**
-	 * See `nativeType` of `NcButton`
+	 * See `nativeType` of `NcButton`.
+	 * @deprecated use `type` instead - will removed with v9
 	 */
 	nativeType: {
 		type: String,
@@ -90,6 +97,19 @@ const props = defineProps({
 	disabled: {
 		type: Boolean,
 		default: false,
+	},
+
+	/**
+	 * The button variant, see NcButton.
+	 *
+	 * @type {'primary'|'secondary'|'tertiary'|'error'|'warning'|'success'}
+	 * @since 8.24.0
+	 */
+	variant: {
+		type: String,
+		required: false,
+		default: 'secondary',
+		validator: (type) => typeof type === 'string' && ['primary', 'secondary', 'tertiary', 'error', 'warning', 'success'].includes(type),
 	},
 })
 
@@ -109,7 +129,9 @@ const handleClick = async (e) => {
 
 	isLoading.value = true
 	try {
-		const result = await props.callback?.()
+		// for reset buttons the default is "false"
+		const fallback = props.nativeType === 'reset' ? false : undefined
+		const result = await props.callback?.() ?? fallback
 		if (result !== false) {
 			/**
 			 * The click event (`MouseEvent`) and the value returned by the callback

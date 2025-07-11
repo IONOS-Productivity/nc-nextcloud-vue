@@ -153,8 +153,8 @@ export default {
 </docs>
 <template>
 	<span ref="main"
-		:title="tooltip"
 		v-click-outside="closeMenu"
+		:title="tooltip"
 		:class="{
 			'avatardiv--unknown': userDoesNotExist,
 			'avatardiv--with-menu': hasMenu,
@@ -175,9 +175,9 @@ export default {
 		<!-- Contact menu -->
 		<!-- We show a button if the menu is not loaded yet. -->
 		<NcButton v-if="hasMenu && menu.length === 0"
-			type="tertiary-no-background"
-			class="action-item action-item__menutoggle"
 			:aria-label="avatarAriaLabel"
+			class="action-item action-item__menutoggle"
+			variant="tertiary-no-background"
 			@click="toggleMenu">
 			<template #icon>
 				<NcLoadingIcon v-if="contactsMenuLoading" />
@@ -185,12 +185,12 @@ export default {
 			</template>
 		</NcButton>
 		<NcActions v-else-if="hasMenu"
+			:aria-label="avatarAriaLabel"
+			:container="menuContainer"
 			force-menu
 			manual-open
-			type="tertiary-no-background"
-			:container="menuContainer"
 			:open.sync="contactsMenuOpenState"
-			:aria-label="avatarAriaLabel"
+			variant="tertiary-no-background"
 			@click="toggleMenu">
 			<component :is="item.ncActionComponent"
 				v-for="(item, key) in menu"
@@ -318,14 +318,30 @@ export default {
 			default: undefined,
 		},
 		/**
-		 * Whether or not to display the user-status
+		 * Do not show the user status on the avatar.
+		 */
+		 hideStatus: {
+			type: Boolean,
+			default: false,
+		},
+		/**
+		 * Whether or not to display the user-status.
+		 * @deprecated - Use `hideStatus` instead. Will be removed with v9.
 		 */
 		showUserStatus: {
 			type: Boolean,
 			default: true,
 		},
 		/**
+		 * Show the verbose user status (e.g. "online" / "away") instead of just the status icon.
+		 */
+		verboseStatus: {
+			type: Boolean,
+			default: false,
+		},
+		/**
 		 * Whether or not to the status-icon should be used instead of online/away
+		 * @deprecated - Use `verboseStatus` instead. Will be removed with v9.
 		 */
 		showUserStatusCompact: {
 			type: Boolean,
@@ -365,7 +381,15 @@ export default {
 			default: 32,
 		},
 		/**
-		 * Placeholder avatars will be automatically generated when this is set to true
+		 * Do not automatically generate a placeholder avatars if there is no real avatar is available.
+		 */
+		 noPlaceholder: {
+			type: Boolean,
+			default: false,
+		},
+		/**
+		 * Placeholder avatars will be automatically generated when this is set to true.
+		 * @deprecated - Use `noPlaceholder` instead. Will be removed in v9.
 		 */
 		allowPlaceholder: {
 			type: Boolean,
@@ -439,12 +463,15 @@ export default {
 			return t('Avatar of {displayName}', { displayName: this.displayName ?? this.user })
 		},
 		canDisplayUserStatus() {
-			return this.showUserStatus
+			return !this.hideStatus
+				&& this.showUserStatus
 				&& this.hasStatus
 				&& ['online', 'away', 'busy', 'dnd'].includes(this.userStatus.status)
 		},
 		showUserStatusIconOnAvatar() {
-			return this.showUserStatus
+			return !this.hideStatus
+				&& this.showUserStatus
+				&& !this.verboseStatus
 				&& this.showUserStatusCompact
 				&& this.hasStatus
 				&& this.userStatus.status !== 'dnd'
@@ -486,16 +513,15 @@ export default {
 		 * True if initials should be shown as the user icon fallback
 		 */
 		showInitials() {
-			return this.allowPlaceholder && this.userDoesNotExist && !(this.iconClass || this.$slots.icon)
+			return !this.noPlaceholder && this.allowPlaceholder && this.userDoesNotExist && !(this.iconClass || this.$slots.icon)
 		},
 
 		avatarStyle() {
-			const style = {
+			return {
 				'--size': this.size + 'px',
-				lineHeight: this.size + 'px',
+				lineHeight: this.showInitials ? (this.size + 'px') : 0,
 				fontSize: Math.round(this.size * 0.45) + 'px',
 			}
-			return style
 		},
 		initialsWrapperStyle() {
 			const { r, g, b } = usernameToColor(this.userIdentifier)
@@ -599,7 +625,7 @@ export default {
 				return p.innerHTML
 			}
 
-			if (this.showUserStatus && (this.userStatus.icon || this.userStatus.message)) {
+			if (!this.hideStatus && this.showUserStatus && (this.userStatus.icon || this.userStatus.message)) {
 				// NcAction's URL icons are inverted in dark mode, so we need to pass SVG image in the icon slot
 				const emojiIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
 					<text x="50%" y="50%" text-anchor="middle" style="dominant-baseline: central; font-size: 85%">${escape(this.userStatus.icon)}</text>
@@ -632,7 +658,7 @@ export default {
 		this.loadAvatarUrl()
 		subscribe('settings:avatar:updated', this.loadAvatarUrl)
 		subscribe('settings:display-name:updated', this.loadAvatarUrl)
-		if (this.showUserStatus && this.user && !this.isNoUser) {
+		if (!this.hideStatus && this.showUserStatus && this.user && !this.isNoUser) {
 			if (!this.preloadedUserStatus) {
 				this.fetchUserStatus(this.user)
 			} else {
@@ -648,9 +674,7 @@ export default {
 	beforeDestroy() {
 		unsubscribe('settings:avatar:updated', this.loadAvatarUrl)
 		unsubscribe('settings:display-name:updated', this.loadAvatarUrl)
-		if (this.showUserStatus && this.user && !this.isNoUser) {
-			unsubscribe('user_status:status.updated', this.handleUserStatusUpdated)
-		}
+		unsubscribe('user_status:status.updated', this.handleUserStatusUpdated)
 	},
 
 	methods: {
@@ -702,7 +726,7 @@ export default {
 			this.isAvatarLoaded = false
 
 			/** Only run avatar image loading if either user or url property is defined */
-			if (!this.isUrlDefined && (!this.isUserDefined || this.isNoUser)) {
+			if (!this.isUrlDefined && (!this.isUserDefined || this.isNoUser || this.iconClass)) {
 				this.isAvatarLoaded = true
 				this.userDoesNotExist = true
 				return
