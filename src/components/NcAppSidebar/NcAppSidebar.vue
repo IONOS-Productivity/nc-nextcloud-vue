@@ -715,7 +715,7 @@ import NcAppSidebarHeader from '../NcAppSidebarHeader/index.ts'
 import NcButton from '../NcButton/index.js'
 import NcEmptyContent from '../NcEmptyContent/index.js'
 import NcLoadingIcon from '../NcLoadingIcon/index.js'
-import Focus from '../../directives/Focus/index.js'
+import Focus from '../../directives/Focus/index.ts'
 import { useIsSmallMobile } from '../../composables/useIsMobile/index.js'
 import GenRandomId from '../../utils/GenRandomId.js'
 import { getTrapStack } from '../../utils/focusTrap.ts'
@@ -1336,14 +1336,6 @@ $top-buttons-spacing: $app-navigation-padding; // align with app navigation
 			inset-inline-end: $top-buttons-spacing;
 			width: var(--default-clickable-area);
 			height: var(--default-clickable-area);
-			opacity: $opacity_normal;
-			border-radius: calc(var(--default-clickable-area) / 2);
-			&:hover,
-			&:active,
-			&:focus {
-				opacity: $opacity_full;
-				background-color: $action-background-hover;
-			}
 		}
 
 		// Compact mode only affects a sidebar with a figure
