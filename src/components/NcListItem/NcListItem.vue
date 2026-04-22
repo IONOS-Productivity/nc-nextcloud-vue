@@ -24,7 +24,7 @@
 			</template>
 			<template #indicator>
 				<!-- Color dot -->
-				<CheckboxBlankCircle :size="16" fill-color="#fff" />
+				<CheckboxBlankCircleOutline :size="16" fill-color="#fff" />
 			</template>
 			<template #actions>
 				<NcActionButton>
@@ -176,9 +176,9 @@
 				<NcAvatar disable-menu :size="44" user="janedoe" display-name="Jane Doe" />
 			</template>
 			<template #name>
-				<span style="display: flex; gap: 0.5rem; color: var(--color-warning);">
+				<span style="display: flex; gap: 0.5rem; color: var(--color-favorite);">
 					Flexible styling within the first line of the component
-					<div style="color: var(--color-error);">
+					<div style="color: var(--color-text-error, var(--color-error));">
 						like this.
 					</div>
 				</span>
@@ -314,17 +314,17 @@ The `actions-icon` slot can be used to pass icon to the inner NcActions componen
 			<template #extra-actions>
 				<NcButton variant="tertiary">
 					<template #icon>
-						<IconPencil :size="20" />
+						<IconPencilOutline :size="20" />
 					</template>
 				</NcButton>
 				<NcButton variant="tertiary">
 					<template #icon>
-						<IconCog :size="20" />
+						<IconCogOutline :size="20" />
 					</template>
 				</NcButton>
 			</template>
 			<template #actions-icon>
-				<IconNoteText :size="20" />
+				<IconNoteTextOutline :size="20" />
 			</template>
 			<template #actions>
 				<NcActionButton>
@@ -342,14 +342,20 @@ The `actions-icon` slot can be used to pass icon to the inner NcActions componen
 </template>
 <script>
 	import IconCog from 'vue-material-design-icons/Cog.vue'
+	import IconCogOutline from 'vue-material-design-icons/CogOutline.vue'
 	import IconNoteText from 'vue-material-design-icons/NoteText.vue'
+	import IconNoteTextOutline from 'vue-material-design-icons/NoteTextOutline.vue'
 	import IconPencil from 'vue-material-design-icons/Pencil.vue'
+	import IconPencilOutline from 'vue-material-design-icons/PencilOutline.vue'
 
 	export default {
 		components: {
 			IconCog,
+			IconCogOutline,
 			IconNoteText,
+			IconNoteTextOutline,
 			IconPencil,
+			IconPencilOutline,
 		},
 	}
 </script>
@@ -368,14 +374,14 @@ The `actions-icon` slot can be used to pass icon to the inner NcActions componen
 		<NcListItem compact
 			name="Name of the element">
 			<template #icon>
-				<IconNoteText :size="20" />
+				<IconNoteTextOutline :size="20" />
 			</template>
 		</NcListItem>
 		<NcListItem compact
 			name="Name of the element"
 			:counter-number="1">
 			<template #icon>
-				<IconNoteText :size="20" />
+				<IconNoteTextOutline :size="20" />
 			</template>
 			<template #subname>
 				This one is with subname
@@ -393,7 +399,7 @@ The `actions-icon` slot can be used to pass icon to the inner NcActions componen
 			name="Name of the element"
 			:counter-number="3">
 			<template #icon>
-				<IconNoteText :size="20" />
+				<IconNoteTextOutline :size="20" />
 			</template>
 			<template #subname>
 				This one is with subname
@@ -412,7 +418,7 @@ The `actions-icon` slot can be used to pass icon to the inner NcActions componen
 			:counter-number="4"
 			href="https://nextcloud.com">
 			<template #icon>
-				<IconNoteText :size="20" />
+				<IconNoteTextOutline :size="20" />
 			</template>
 			<template #subname>
 				This one is with an external link
@@ -422,10 +428,12 @@ The `actions-icon` slot can be used to pass icon to the inner NcActions componen
 </template>
 <script>
 	import IconNoteText from 'vue-material-design-icons/NoteText.vue'
+	import IconNoteTextOutline from 'vue-material-design-icons/NoteTextOutline.vue'
 
 	export default {
 		components: {
 			IconNoteText,
+			IconNoteTextOutline,
 		},
 	}
 </script>
@@ -434,14 +442,17 @@ The `actions-icon` slot can be used to pass icon to the inner NcActions componen
 
 <template>
 	<!-- This wrapper can be either a router link or a `<li>` -->
-	<component :is="to ? 'router-link' : 'NcVNodes'"
+	<component
+		:is="to ? 'router-link' : 'NcVNodes'"
 		v-slot="{ href: routerLinkHref, navigate, isActive }"
 		:custom="to ? true : null"
 		:to="to"
 		:exact="to ? exact : null">
-		<li class="list-item__wrapper"
-			:class="{ 'list-item__wrapper--active' : isActive || active }">
-			<div ref="list-item"
+		<li
+			class="list-item__wrapper"
+			:class="{ 'list-item__wrapper--active': active ?? isActive }">
+			<div
+				ref="list-item"
 				class="list-item"
 				:class="{
 					'list-item--compact': compact,
@@ -450,7 +461,8 @@ The `actions-icon` slot can be used to pass icon to the inner NcActions componen
 				}"
 				@mouseover="handleMouseover"
 				@mouseleave="handleMouseleave">
-				<a :id="anchorId || undefined"
+				<a
+					:id="anchorId || undefined"
 					:aria-label="linkAriaLabel"
 					class="list-item__anchor"
 					:href="routerLinkHref || href"
@@ -470,9 +482,10 @@ The `actions-icon` slot can be used to pass icon to the inner NcActions componen
 								<!-- @slot Slot for the first line of the component. prop 'name' is used as a fallback is no slots are provided -->
 								<slot name="name">{{ name }}</slot>
 							</div>
-							<div v-if="hasSubname"
+							<div
+								v-if="hasSubname"
 								class="list-item-content__subname"
-								:class="{'list-item-content__subname--bold': bold}">
+								:class="{ 'list-item-content__subname--bold': bold }">
 								<!-- @slot Slot for the second line of the component -->
 								<slot name="subname" />
 							</div>
@@ -483,11 +496,13 @@ The `actions-icon` slot can be used to pass icon to the inner NcActions componen
 								<slot name="details">{{ details }}</slot>
 							</div>
 							<!-- Counter and indicator -->
-							<div v-if="counterNumber || hasIndicator"
+							<div
+								v-if="counterNumber || hasIndicator"
 								v-show="showAdditionalElements"
 								class="list-item-details__extra">
-								<NcCounterBubble v-if="counterNumber"
-									:active="isActive || active"
+								<NcCounterBubble
+									v-if="counterNumber"
+									:active="active ?? isActive"
 									class="list-item-details__counter"
 									:type="counterType">
 									{{ counterNumber }}
@@ -508,11 +523,13 @@ The `actions-icon` slot can be used to pass icon to the inner NcActions componen
 				</div>
 
 				<!-- Actions -->
-				<div v-show="forceDisplayActions || displayActionsOnHoverFocus"
+				<div
+					v-if="forceDisplayActions || displayActionsOnHoverFocus"
 					class="list-item-content__actions"
 					@focusout="handleBlur">
-					<NcActions ref="actions"
-						:primary="isActive || active"
+					<NcActions
+						ref="actions"
+						:primary="active ?? isActive"
 						:force-menu="forceMenu"
 						:aria-label="actionsAriaLabel"
 						@update:open="handleActionsUpdateOpen">
@@ -535,9 +552,13 @@ The `actions-icon` slot can be used to pass icon to the inner NcActions componen
 </template>
 
 <script>
+import { loadState } from '@nextcloud/initial-state'
 import NcActions from '../NcActions/index.js'
 import NcCounterBubble from '../NcCounterBubble/index.js'
 import NcVNodes from '../NcVNodes/index.js'
+
+const [major] = loadState('core', 'config', { version: '30.0' }).version.split('.', 2) ?? []
+const isLegacy = major && Number.parseInt(major) < 30
 
 export default {
 	name: 'NcListItem',
@@ -590,6 +611,9 @@ export default {
 			default: '#',
 		},
 
+		/**
+		 * The HTML target attribute used for the link
+		 */
 		target: {
 			type: String,
 			default: '',
@@ -624,7 +648,8 @@ export default {
 		 */
 		active: {
 			type: Boolean,
-			default: false,
+			// eslint-disable-next-line vue/no-boolean-default
+			default: undefined,
 		},
 
 		/**
@@ -647,10 +672,10 @@ export default {
 		 * If different from 0 this component will display the
 		 * NcCounterBubble component
 		 */
-		 counterNumber: {
-			 type: [Number, String],
-			 default: 0,
-		 },
+		counterNumber: {
+			type: [Number, String],
+			default: 0,
+		},
 
 		/**
 		 * Outlined or highlighted state of the counter
@@ -694,9 +719,6 @@ export default {
 	],
 
 	setup() {
-		const [major] = window._oc_config?.version.split('.', 2) ?? []
-		const isLegacy = major && Number.parseInt(major) < 30
-
 		return {
 			isLegacy,
 		}

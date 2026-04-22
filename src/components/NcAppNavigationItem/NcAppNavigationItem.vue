@@ -46,13 +46,44 @@
 </ul>
 ```
 
+* Using different icons based on the active state (e.g. using vue-router and showing the filled variant for the current route):
+
+```vue
+<template>
+	<ul>
+		<NcAppNavigationItem name="Current page" :active="true">
+			<template #icon="{ active }">
+				<NcIconSvgWrapper :path="active ? mdiFolder : mdiFolderOutline" />
+			</template>
+		</NcAppNavigationItem>
+		<NcAppNavigationItem name="Other page">
+			<template #icon="{ active }">
+				<NcIconSvgWrapper :path="active ? mdiFolder : mdiFolderOutline" />
+			</template>
+		</NcAppNavigationItem>
+	</ul>
+</template>
+<script>
+import { mdiFolder, mdiFolderOutline } from '@mdi/js'
+
+export default {
+	setup() {
+		return {
+			mdiFolder,
+			mdiFolderOutline,
+		}
+	},
+}
+</script>
+```
+
 #### Element with actions
 Wrap the children in a template. If you have more than 2 actions, a popover menu and a menu
 button will be automatically created.
 
 ```vue
 	<template>
-		<div id="app-navigation-vue"><!-- Just a wrapper necessary in the docs. Not needed when NcAppNavigation is correctly used as parent. -->
+		<div id="app-navigation-vue-action"><!-- Just a wrapper necessary in the docs. Not needed when NcAppNavigation is correctly used as parent. -->
 			<ul>
 				<NcAppNavigationItem name="Item with actions">
 					<template #icon>
@@ -106,7 +137,7 @@ Just nest the counter in a template within `<NcAppNavigationItem>` and add `#cou
 		<ul>
 			<NcAppNavigationItem name="Item with counter">
 				<template #icon>
-					<Folder :size="20" />
+					<IconFolderOutline :size="20" />
 				</template>
 				<template #counter>
 					<NcCounterBubble>
@@ -117,11 +148,11 @@ Just nest the counter in a template within `<NcAppNavigationItem>` and add `#cou
 		</ul>
 	</template>
 	<script>
-	import Folder from 'vue-material-design-icons/Folder.vue'
+	import IconFolderOutline from 'vue-material-design-icons/FolderOutline.vue'
 
 	export default {
 		components: {
-			Folder,
+			IconFolderOutline,
 		},
 	}
 	</script>
@@ -129,15 +160,15 @@ Just nest the counter in a template within `<NcAppNavigationItem>` and add `#cou
 
 #### Element with children
 
-Wrap the children in a template with the `slot` property and use the prop `allowCollapse` to choose wether to allow or
+Wrap the children in a template with the `slot` property and use the prop `allowCollapse` to choose whether to allow or
 prevent the user from collapsing the items.
 
 ```vue
 	<template>
 		<ul>
-			<NcAppNavigationItem name="Item with children" :allowCollapse="true" :open="true">
+			<NcAppNavigationItem name="Item with children" :allowCollapse="true">
 				<template #icon>
-					<Folder :size="20" />
+					<IconFolderOutline :size="20" />
 				</template>
 				<template #counter>
 					<NcCounterBubble>
@@ -173,14 +204,14 @@ prevent the user from collapsing the items.
 		</ul>
 	</template>
 	<script>
-	import Folder from 'vue-material-design-icons/Folder.vue'
+	import IconFolderOutline from 'vue-material-design-icons/FolderOutline.vue'
 	import Delete from 'vue-material-design-icons/Delete.vue'
 	import OpenInNew from 'vue-material-design-icons/OpenInNew.vue'
 	import Pencil from 'vue-material-design-icons/Pencil.vue'
 
 	export default {
 		components: {
-			Folder,
+			IconFolderOutline,
 			Delete,
 			OpenInNew,
 			Pencil,
@@ -199,17 +230,17 @@ the placeholder is the previous name of the element.
 			<NcAppNavigationItem name="Editable Item" :editable="true"
 				editPlaceholder="your_placeholder_here" @update:name="function(value){alert(value)}">
 				<template #icon>
-					<Folder :size="20" />
+					<IconFolderOutline :size="20" />
 				</template>
 			</NcAppNavigationItem>
 		</ul>
 	</template>
 	<script>
-	import Folder from 'vue-material-design-icons/Folder.vue'
+	import IconFolderOutline from 'vue-material-design-icons/FolderOutline.vue'
 
 	export default {
 		components: {
-			Folder,
+			IconFolderOutline,
 		},
 	}
 	</script>
@@ -252,28 +283,32 @@ Just set the `pinned` prop.
 </docs>
 
 <template>
-	<li :id="id"
+	<li
+		:id="id"
 		:class="{
 			'app-navigation-entry--opened': opened,
 			'app-navigation-entry--pinned': pinned,
 			'app-navigation-entry--collapsible': isCollapsible(),
 		}"
 		class="app-navigation-entry-wrapper">
-		<component :is="isRouterLink ? 'router-link' : 'NcVNodes'"
+		<component
+			:is="isRouterLink ? 'router-link' : 'NcVNodes'"
 			v-slot="{ href: routerLinkHref, navigate, isActive }"
 			:custom="isRouterLink ? true : false"
 			:to="to"
 			:exact="isRouterLink ? exact : null">
-			<div :class="{
+			<div
+				:class="{
 					'app-navigation-entry--editing': editingActive,
 					'app-navigation-entry--deleted': undo,
-					'active': (isActive && to) || active,
+					active: (to && isActive) || active,
 				}"
 				class="app-navigation-entry">
 				<!-- Icon and name -->
-				<a v-if="!undo"
+				<a
+					v-if="!undo"
 					class="app-navigation-entry-link"
-					:aria-current="active || (isActive && to) ? 'page' : undefined"
+					:aria-current="active || (to && isActive) ? 'page' : undefined"
 					:aria-description="ariaDescription"
 					:aria-expanded="$scopedSlots.default ? opened.toString() : undefined"
 					:href="href || routerLinkHref || '#'"
@@ -286,20 +321,22 @@ Just set the `pinned` prop.
 
 					<!-- icon if not collapsible -->
 					<!-- never show the icon over the collapsible if mobile -->
-					<div :class="{ [icon]: icon }"
+					<div
+						:class="{ [icon]: icon }"
 						class="app-navigation-entry-icon">
 						<NcLoadingIcon v-if="loading" />
-						<!-- @slot Slot for the optional leading icon -->
-						<slot v-else name="icon" />
+						<!-- @slot Slot for the optional leading icon. This slots get the `active`-slot attribute passed which is based on the vue-routers active route or the `active` prop. -->
+						<slot v-else name="icon" :active="active || (to && isActive)" />
 					</div>
 					<span v-if="!editingActive" class="app-navigation-entry__name">
 						{{ name }}
 					</span>
 					<div v-if="editingActive" class="editingContainer">
-						<NcInputConfirmCancel ref="editingInput"
+						<NcInputConfirmCancel
+							ref="editingInput"
 							v-model="editingValue"
 							:placeholder="editPlaceholder !== '' ? editPlaceholder : name"
-							:primary="(isActive && to) || active"
+							:primary="(to && isActive) || active"
 							@cancel="cancelEditing"
 							@confirm="handleEditingDone" />
 					</div>
@@ -313,15 +350,18 @@ Just set the `pinned` prop.
 				</div>
 
 				<!-- Counter and Actions -->
-				<div v-if="hasUtils && !editingActive"
+				<div
+					v-if="hasUtils && !editingActive"
 					class="app-navigation-entry__utils"
-					:class="{'app-navigation-entry__utils--display-actions': forceDisplayActions || menuOpenLocalValue || menuOpen }">
-					<div v-if="$scopedSlots.counter"
+					:class="{ 'app-navigation-entry__utils--display-actions': forceDisplayActions || menuOpenLocalValue || menuOpen }">
+					<div
+						v-if="$scopedSlots.counter"
 						class="app-navigation-entry__counter-wrapper">
 						<!-- @slot Slot for the `NcCounterBubble` -->
 						<slot name="counter" />
 					</div>
-					<NcActions v-if="$scopedSlots.actions || (editable && !editingActive) || undo"
+					<NcActions
+						v-if="$scopedSlots.actions || (editable && !editingActive) || undo"
 						ref="actions"
 						:inline="inlineActions"
 						class="app-navigation-entry__actions"
@@ -329,7 +369,7 @@ Just set the `pinned` prop.
 						:boundaries-element="actionsBoundariesElement"
 						:placement="menuPlacement"
 						:open="menuOpen"
-						:type="(isActive && to) || active ? 'primary' : null"
+						:type="(to && isActive) || active ? 'tertiary-on-primary' : 'tertiary'"
 						:force-menu="forceMenu"
 						:default-icon="menuIcon"
 						@update:open="onMenuToggle">
@@ -337,7 +377,8 @@ Just set the `pinned` prop.
 							<!-- @slot Slot for the custom menu icon -->
 							<slot name="menu-icon" />
 						</template>
-						<NcActionButton v-if="editable && !editingActive"
+						<NcActionButton
+							v-if="editable && !editingActive"
 							:aria-label="editButtonAriaLabel"
 							@click="handleEdit">
 							<template #icon>
@@ -345,7 +386,8 @@ Just set the `pinned` prop.
 							</template>
 							{{ editLabel }}
 						</NcActionButton>
-						<NcActionButton v-if="undo"
+						<NcActionButton
+							v-if="undo"
 							:aria-label="undoButtonAriaLabel"
 							@click="handleUndo">
 							<template #icon>
@@ -356,7 +398,11 @@ Just set the `pinned` prop.
 						<slot name="actions" />
 					</NcActions>
 				</div>
-				<NcAppNavigationIconCollapsible v-if="isCollapsible()" :open="opened" @click.prevent.stop="toggleCollapse" />
+				<NcAppNavigationIconCollapsible
+					v-if="isCollapsible()"
+					:active="(to && isActive) || active"
+					:open="opened"
+					@click.prevent.stop="toggleCollapse" />
 
 				<!-- @slot Slot for anything (virtual) that should be mounted in the component, like a related modal -->
 				<slot name="extra" />
@@ -371,18 +417,17 @@ Just set the `pinned` prop.
 </template>
 
 <script>
-import NcActions from '../NcActions/index.js'
-import NcActionButton from '../NcActionButton/index.js'
-import NcLoadingIcon from '../NcLoadingIcon/index.js'
-import NcVNodes from '../NcVNodes/index.js'
-import NcAppNavigationIconCollapsible from './NcAppNavigationIconCollapsible.vue'
-import { useIsMobile } from '../../composables/useIsMobile/index.js'
-import NcInputConfirmCancel from './NcInputConfirmCancel.vue'
-import { t } from '../../l10n.js'
-import GenRandomId from '../../utils/GenRandomId.js'
-
 import Pencil from 'vue-material-design-icons/Pencil.vue'
 import Undo from 'vue-material-design-icons/Undo.vue'
+import NcAppNavigationIconCollapsible from './NcAppNavigationIconCollapsible.vue'
+import NcInputConfirmCancel from './NcInputConfirmCancel.vue'
+import { useIsMobile } from '../../composables/useIsMobile/index.ts'
+import { t } from '../../l10n.js'
+import GenRandomId from '../../utils/GenRandomId.js'
+import NcActionButton from '../NcActionButton/index.js'
+import NcActions from '../NcActions/index.js'
+import NcLoadingIcon from '../NcLoadingIcon/index.js'
+import NcVNodes from '../NcVNodes/index.js'
 
 export default {
 	name: 'NcAppNavigationItem',
@@ -430,7 +475,7 @@ export default {
 		id: {
 			type: String,
 			default: () => 'app-navigation-item-' + GenRandomId(),
-			validator: id => id.trim() !== '',
+			validator: (id) => id.trim() !== '',
 		},
 
 		/**
@@ -478,6 +523,7 @@ export default {
 			type: Boolean,
 			default: false,
 		},
+
 		/**
 		 * Gives the possibility to collapse the children elements into the
 		 * parent element (true) or expands the children elements (false).
@@ -670,6 +716,7 @@ export default {
 			this.$emit('update:menuOpen', state)
 			this.menuOpenLocalValue = state
 		},
+
 		// toggle the collapsible state
 		toggleCollapse() {
 			this.opened = !this.opened
@@ -706,9 +753,11 @@ export default {
 				this.$refs.editingInput.focusInput()
 			})
 		},
+
 		cancelEditing() {
 			this.editingActive = false
 		},
+
 		handleEditingDone() {
 			this.$emit('update:name', this.editingValue)
 			this.editingValue = ''
@@ -775,5 +824,5 @@ export default {
 </script>
 
 <style scoped lang="scss">
-@import '../../assets/NcAppNavigationItem';
+@use '../../assets/NcAppNavigationItem.scss';
 </style>

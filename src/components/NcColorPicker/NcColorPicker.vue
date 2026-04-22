@@ -3,200 +3,309 @@
   - SPDX-License-Identifier: AGPL-3.0-or-later
 -->
 
-<docs>
+<script setup lang="ts">
+import type { Color } from '../../utils/colors.ts'
 
-### General description
+import { mdiArrowLeft, mdiCheck, mdiCloseCircleOutline, mdiDotsHorizontal } from '@mdi/js'
+import { useVModel } from '@vueuse/core'
+import { computed, ref } from 'vue'
+import { Chrome } from 'vue-color'
+import NcButton from '../NcButton/NcButton.vue'
+import NcIconSvgWrapper from '../NcIconSvgWrapper/NcIconSvgWrapper.vue'
+import NcPopover from '../NcPopover/NcPopover.vue'
+import { useModelMigration } from '../../composables/useModelMigration.ts'
+import { t } from '../../l10n.js'
+import { COLOR_BLACK, COLOR_WHITE, defaultPalette } from '../../utils/colors.ts'
+import { createElementId } from '../../utils/createElementId.ts'
+import { logger } from '../../utils/logger.ts'
 
-This component allows the user to choose a color. It consists of 2
-actual pickers:
+const props = withDefaults(defineProps<{
+	/**
+	 * Set to `true` to enable advanced fields including HEX, RGB, and HSL
+	 */
+	advancedFields?: boolean
 
-- One simple picker with a predefined palette of colors;
-- One more advanced picker that provides the full color spectrum;
+	/**
+	 * Allow to clear the current color.
+	 * When set the `update:modelValue` and `submit` event might emit also `undefined`.
+	 */
+	clearable?: boolean
 
-### Usage
+	/**
+	 * Selector for the popover container
+	 */
+	container?: string | Element
 
-* Using v-model and passing in an HTML element that will be treated as a trigger:
+	/**
+	 * The model value (selected color).
+	 */
+	modelValue?: string // eslint-disable-line vue/no-unused-properties -- used by useModelMigration
 
-```vue
-<template>
-	<div class="container0">
-		<NcColorPicker v-model="color">
-			<NcButton> Click Me </NcButton>
-		</NcColorPicker>
-		<NcColorPicker v-model="color" :palette="customPalette">
-			<NcButton> Click Me for a custom palette </NcButton>
-		</NcColorPicker>
-		<div :style="{'background-color': color}" class="color0" />
-	</div>
-</template>
-<script>
-export default {
-	data() {
-		return {
-			color: '#0082c9',
-			customPalette: [
-				'#E40303',
-				'#FF8C00',
-				'#FFED00',
-				'#008026',
-				'#24408E',
-				'#732982',
-				'#5BCEFA',
-				'#F5A9B8',
-				'#FFFFFF',
-				'#F5A9B8',
-				'#5BCEFA',
-			],
+	/**
+	 * @deprecated use `modelValue`
+	 */
+	value?: string // eslint-disable-line vue/no-unused-properties -- used by useModelMigration
+
+	/**
+	 * Current open state of the color picker
+	 */
+	open?: boolean // eslint-disable-line vue/no-unused-properties -- used by useVModel
+
+	/**
+	 * Provide a custom array of colors to show.
+	 * Can be either an array of string hexadecimal colors,
+	 * or an array of object with a `color` property with hexadecimal color string,
+	 * and a `name` property for accessibility.
+	 */
+	palette?: string[] | Color[]
+
+	/**
+	 * Limit selectable colors to only the provided palette
+	 */
+	paletteOnly?: boolean
+}>(), {
+	container: 'body',
+	palette: () => [],
+	modelValue: '',
+	value: undefined,
+})
+
+const emit = defineEmits<{
+	/**
+	 * Emitted when the submit button was pressed.
+	 * The payload is the same as the current modelValue.
+	 *
+	 * The value might be undefined if the `clearable` prop is set.
+	 */
+	(e: 'submit', v: string | undefined): void
+
+	/**
+	 * The color picker was fully closed.
+	 */
+	(e: 'close'): void
+
+	/**
+	 * The updated color
+	 */
+	(e: 'update:modelValue', v: string | undefined): void
+
+	/**
+	 * @deprecated use `update:modelValue`
+	 */
+	(e: 'update:value', v: string | undefined): void
+}>()
+
+const currentColor = useModelMigration<string | undefined>('value', 'update:value', true)
+// watchEffect(() => console.error('current: ', currentColor.value))
+
+const modelOpen = useVModel(props, 'open', emit, { passive: true, eventName: 'update:open' })
+
+const HEX_REGEX = /^#([a-f0-9]{3}|[a-f0-9]{6})$/i
+
+/**
+ * Unique id used to identify different color pickers
+ */
+const id = createElementId()
+
+/**
+ * Is the advanced picker is open
+ */
+const advanced = ref(false)
+
+/**
+ * Normalized palette by converting array of hex colors to color objects.
+ * This also ensures there is a default palette if needed (no palette passed).
+ */
+const normalizedPalette = computed(() => {
+	let palette = props.palette as (string | Color)[]
+	for (const color of palette) {
+		if ((typeof color === 'string' && !color.match(HEX_REGEX))
+			|| (typeof color === 'object' && !color.color?.match(HEX_REGEX))) {
+			logger.error('[NcColorPicker] Invalid palette passed', { color })
+			palette = []
+			break
 		}
 	}
+
+	if (palette.length === 0) {
+		palette = props.clearable
+			? [...defaultPalette, COLOR_BLACK, COLOR_WHITE]
+			: [...defaultPalette]
+	}
+
+	return palette.map((item: Color | string) => ({
+		color: typeof item === 'object' ? item.color : item,
+		name: typeof item === 'object' && item.name
+			? item.name
+			: t('A color with a HEX value {hex}', { hex: typeof item === 'string' ? item : item.color }),
+	}))
+})
+
+/**
+ * Submit a picked colour and close picker
+ *
+ * @param hideCallback - callback to close popover
+ */
+function handleConfirm(hideCallback: () => void) {
+	emit('submit', currentColor.value)
+	hideCallback()
+	advanced.value = false
+}
+
+/**
+ * Toggle the currently selected palette color.
+ *
+ * @param color - The color to toggle
+ */
+function toggleColor(color: string | Color) {
+	color = typeof color === 'string' ? color : color.color
+
+	if (props.clearable && currentColor.value === color) {
+		currentColor.value = undefined
+	} else {
+		currentColor.value = color
+	}
+}
+
+/**
+ * @param color - The picked color from the Chrome component
+ * @param color.hex - The hex string of the color
+ */
+function pickCustomColor(color: { hex: string }): void {
+	currentColor.value = color.hex
+}
+
+/**
+ * Get the text color with the most constrast for a given background color.
+ *
+ * @param color - The background color
+ */
+function getContrastColor(color: string): string {
+	return calculateLuma(color) > 0.5
+		? COLOR_BLACK.color
+		: COLOR_WHITE.color
+}
+
+/**
+ * Calculate luminance of provided hex color
+ *
+ * @param color - The hex color
+ */
+function calculateLuma(color: string) {
+	const [red, green, blue] = hexToRGB(color)
+	return (0.2126 * red + 0.7152 * green + 0.0722 * blue) / 255
+}
+
+/**
+ * Convert hex color to RGB
+ *
+ * @param hex - The hex color
+ */
+function hexToRGB(hex: string) {
+	const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+	return result
+		? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)]
+		: [0, 0, 0]
 }
 </script>
-<style>
-.container0 {
-	display: flex;
-	gap: 20px;
-}
 
-.color0 {
-	width: 100px;
-	height: 34px;
-	border-radius: 6px;
-}
-</style>
-```
-
-* Using v-bind for both color and open state and emitting an event that updates the color
-
-```vue
-<template>
-	<div class="container1">
-		<NcButton @click="open = !open"> Click Me </NcButton>
-		<NcColorPicker :model-value="color" @update:model-value="updateColor" :shown.sync="open" v-slot="{ attrs }">
-			<div v-bind="attrs" :style="{'background-color': color}" class="color1" />
-		</NcColorPicker>
-	</div>
-</template>
-<script>
+<script lang="ts">
 export default {
-	data() {
-		return {
-			color: '#0082c9',
-			open: false
-		}
+	model: {
+		event: 'update:modelValue',
+		prop: 'modelValue',
 	},
-	methods: {
-		updateColor(e) {
-			this.color = e
-		}
-	}
 }
 </script>
-<style>
-.container1 {
-	display: flex;
-	gap: 20px;
-}
-
-.color1 {
-	width: 100px;
-	height: 34px;
-	border-radius: 6px;
-}
-</style>
-```
-
-* Using advanced fields including HEX, RGB, and HSL:
-
-```vue
-<template>
-	<div class="container0">
-		<NcColorPicker v-model="color"
-			:advanced-fields="true">
-			<NcButton> Click Me </NcButton>
-		</NcColorPicker>
-		<div :style="{'background-color': color}" class="color0" />
-	</div>
-</template>
-<script>
-export default {
-	data() {
-		return {
-			color: '#0082c9'
-		}
-	}
-}
-</script>
-<style>
-.container0 {
-	display: flex;
-	gap: 20px;
-}
-
-.color0 {
-	width: 100px;
-	height: 34px;
-	border-radius: 6px;
-}
-</style>
-```
-</docs>
 
 <template>
-	<NcPopover popup-role="dialog"
+	<NcPopover
+		:shown.sync="modelOpen"
 		:container="container"
+		popup-role="dialog"
 		v-bind="$attrs"
 		v-on="$listeners"
-		@apply-hide="handleClose">
+		@apply-hide="emit('close')">
 		<template #trigger="slotProps">
 			<slot v-bind="slotProps" />
 		</template>
 		<template #default="slotProps">
-			<div role="dialog"
+			<div
+				role="dialog"
 				class="color-picker"
 				aria-modal="true"
 				:aria-label="t('Color picker')"
-				:class="{ 'color-picker--advanced-fields': advanced && advancedFields }">
+				:class="{
+					'color-picker--advanced-fields': advanced && advancedFields,
+					'color-picker--clearable': clearable,
+				}">
 				<Transition name="slide" mode="out-in">
 					<div v-if="!advanced" class="color-picker__simple">
-						<label v-for="({ color, name }, index) in normalizedPalette"
+						<label
+							v-for="({ color, name }, index) in normalizedPalette"
 							:key="index"
-							:style="{ backgroundColor: color }"
 							class="color-picker__simple-color-circle"
-							:class="{ 'color-picker__simple-color-circle--active' : color === currentColor }">
-							<Check v-if="color === currentColor" :size="20" :fill-color="contrastColor" />
-							<input type="radio"
+							:class="{ 'color-picker__simple-color-circle--active': color === currentColor }"
+							:style="{
+								backgroundColor: color,
+								color: getContrastColor(color),
+							}">
+							<span class="hidden-visually">
+								{{ color }} -- {{ currentColor }}
+							</span>
+							<NcIconSvgWrapper v-if="color === currentColor" :path="mdiCheck" />
+							<input
+								type="radio"
 								class="hidden-visually"
 								:aria-label="name"
-								:name="`color-picker-${uid}`"
+								:name="`color-picker-${id}`"
 								:checked="color === currentColor"
-								@click="pickColor(color)">
+								@click="toggleColor(color)">
+						</label>
+						<label v-if="clearable" class="color-picker__clear" :title="t('No color')">
+							<NcIconSvgWrapper
+								:size="currentColor ? 28 : 34 /* size is adusted so that inner mdi icon aligns with color circles */"
+								:path="mdiCloseCircleOutline" />
+							<input
+								type="radio"
+								class="hidden-visually"
+								:aria-label="t('No color')"
+								:name="`color-picker-${id}`"
+								:checked="!currentColor"
+								@click="currentColor = undefined">
 						</label>
 					</div>
-					<Chrome v-else
-						v-model="currentColor"
+					<Chrome
+						v-else
 						class="color-picker__advanced"
 						:disable-alpha="true"
 						:disable-fields="!advancedFields"
-						@input="pickColor" />
+						:value="currentColor ?? '#000000'"
+						@input="pickCustomColor" />
 				</Transition>
 				<div v-if="!paletteOnly" class="color-picker__navigation">
-					<NcButton v-if="advanced"
-						:aria-label="ariaBack"
+					<NcButton
+						v-if="advanced"
+						:aria-label="t('Back')"
+						:title="t('Back')"
 						variant="tertiary"
-						@click="handleBack">
+						@click="advanced = false">
 						<template #icon>
-							<ArrowLeft :size="20" />
+							<NcIconSvgWrapper directional :path="mdiArrowLeft" />
 						</template>
 					</NcButton>
-					<NcButton v-else
-						:aria-label="ariaMore"
+					<NcButton
+						v-else
+						:aria-label="t('More options')"
+						:title="t('More options')"
 						variant="tertiary"
-						@click="handleMoreSettings">
+						@click="advanced = true">
 						<template #icon>
-							<DotsHorizontal :size="20" />
+							<NcIconSvgWrapper :path="mdiDotsHorizontal" />
 						</template>
 					</NcButton>
-					<NcButton variant="primary"
+					<NcButton
+						variant="primary"
 						@click="handleConfirm(slotProps.hide)">
 						{{ t('Choose') }}
 					</NcButton>
@@ -206,240 +315,6 @@ export default {
 	</NcPopover>
 </template>
 
-<script>
-import NcButton from '../NcButton/index.js'
-import NcPopover from '../NcPopover/index.js'
-import { t } from '../../l10n.js'
-import { defaultPalette } from '../../utils/GenColors.js'
-
-import GenRandomId from '../../utils/GenRandomId.js'
-
-import ArrowLeft from 'vue-material-design-icons/ArrowLeft.vue'
-import Check from 'vue-material-design-icons/Check.vue'
-import DotsHorizontal from 'vue-material-design-icons/DotsHorizontal.vue'
-
-import { Chrome } from 'vue-color'
-import { useModelMigration } from '../../composables/useModelMigration.ts'
-
-const HEX_REGEX = /^#([a-f0-9]{3}|[a-f0-9]{6})$/i
-
-export default {
-	name: 'NcColorPicker',
-
-	components: {
-		ArrowLeft,
-		Check,
-		Chrome,
-		DotsHorizontal,
-		NcButton,
-		NcPopover,
-	},
-
-	model: {
-		prop: 'modelValue',
-		event: 'update:modelValue',
-	},
-
-	props: {
-		/**
-		 * Removed in v9 - use `modelValue` (`v-model`) instead
-		 * @deprecated
-		 */
-		value: {
-			type: String,
-			default: undefined,
-		},
-
-		/**
-		 * A HEX color that represents the initial value of the picker
-		 */
-		modelValue: {
-			type: String,
-			default: undefined,
-		},
-
-		/**
-		 * Set to `true` to enable advanced fields including HEX, RGB, and HSL
-		 */
-		advancedFields: {
-			type: Boolean,
-			default: false,
-		},
-
-		/**
-		 * Limit selectable colors to only the provided palette
-		 */
-		paletteOnly: {
-			type: Boolean,
-			default: false,
-		},
-
-		/**
-		 * Provide a custom array of colors to show.
-		 * Can be either an array of string hexadecimal colors,
-		 * or an array of object with a `color` property with hexadecimal color string,
-		 * and a `name` property for accessibility.
-		 *
-		 * @type {string[] | {color: string, name: string}[]}
-		 */
-		palette: {
-			type: Array,
-			default: () => [...defaultPalette],
-			validator: (palette) => palette.every(item =>
-				(typeof item === 'string' && HEX_REGEX.test(item))
-				|| (typeof item === 'object' && item.color && HEX_REGEX.test(item.color)),
-			),
-		},
-
-		/**
-		 * Selector for the popover container
-		 */
-		container: {
-			type: [String, Object, Element, Boolean],
-			default: 'body',
-		},
-	},
-
-	emits: [
-		'submit',
-		'close',
-		'update:open',
-		/**
-		 * Removed in v9 - use `update:modelValue` (`v-model`) instead
-		 * @deprecated
-		 */
-		'update:value',
-		/**
-		 * Emits a hexadecimal string e.g. '#ffffff'
-		 */
-		'update:modelValue',
-		/** Same as update:modelValue for Vue 2 compatibility */
-		'update:model-value',
-		'input',
-	],
-
-	setup() {
-		const model = useModelMigration('value', 'update:value', true)
-		return {
-			model,
-		}
-	},
-
-	data() {
-		return {
-			currentColor: this.model,
-			advanced: false,
-			ariaBack: t('Back'),
-			ariaMore: t('More options'),
-		}
-	},
-
-	computed: {
-		normalizedPalette() {
-			return this.palette.map((item) => ({
-				color: typeof item === 'object' ? item.color : item,
-				name: typeof item === 'object' && item.name
-					? item.name
-					: t('A color with a HEX value {hex}', { hex: item.color }),
-			}))
-		},
-
-		uid() {
-			return GenRandomId()
-		},
-		contrastColor() {
-			const black = '#000000'
-			const white = '#FFFFFF'
-			return (this.calculateLuma(this.currentColor) > 0.5) ? black : white
-		},
-	},
-
-	watch: {
-		model(color) {
-			this.currentColor = color
-		},
-	},
-
-	methods: {
-		t,
-
-		/**
-		 * Submit a picked colour and close picker
-		 * @param {Function} hideCallback callback to close popover
-		 */
-		handleConfirm(hideCallback) {
-			/**
-			 * Emits a hexadecimal string e.g. '#ffffff'
-			 */
-			this.$emit('submit', this.currentColor)
-			hideCallback()
-
-			this.advanced = false
-		},
-		handleClose() {
-			/**
-			 * Emitted after picker close
-			 */
-			this.$emit('close')
-			this.$emit('update:open', false)
-		},
-
-		/**
-		 * Inner navigations
-		 */
-		handleBack() {
-			this.advanced = false
-		},
-		handleMoreSettings() {
-			this.advanced = true
-		},
-
-		/**
-		 * Pick a colour
-		 *
-		 * @param {string} color the picked color
-		 */
-		pickColor(color) {
-			if (typeof color !== 'string') {
-				color = this.currentColor.hex
-			}
-			this.currentColor = color
-
-			this.model = color
-
-			/**
-			 * Emits a hexadecimal string e.g. '#ffffff'
-			 */
-			this.$emit('input', color)
-
-		},
-
-		/**
-		 * Calculate luminance of provided hex color
-		 *
-		 * @param {string} color the hex color
-		 */
-		 calculateLuma(color) {
-			const [red, green, blue] = this.hexToRGB(color)
-			return (0.2126 * red + 0.7152 * green + 0.0722 * blue) / 255
-		},
-
-		/**
-		 * Convert hex color to RGB
-		 *
-		 * @param {string} hex the hex color
-		 */
-		 hexToRGB(hex) {
-			const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
-			return result
-				? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)]
-				: null
-		},
-	},
-}
-
-</script>
-
 <style lang="scss" scoped>
 .color-picker {
 	display: flex;
@@ -447,13 +322,23 @@ export default {
 	align-content: flex-end;
 	flex-direction: column;
 	justify-content: space-between;
-	box-sizing: content-box !important;
-	width: 176px;
-	padding: 8px;
-	border-radius: 3px;
+	padding: var(--border-radius-element); // align with NcPopover border radius
+	min-width: calc(4 * var(--default-clickable-area) + 2 * var(--border-radius-element)); // space for 4 color circles
+
+	&--clearable {
+		min-width: calc(5 * var(--default-clickable-area) + 2 * var(--border-radius-element));
+	}
 
 	&--advanced-fields {
-		width: 264px;
+		min-width: 264px;
+	}
+
+	&__clear {
+		color: var(--color-main-text);
+
+		&:hover:not(:has(:checked)) {
+			color: var(--color-text-maxcontrast);
+		}
 	}
 
 	&__simple {
@@ -497,8 +382,9 @@ export default {
 	&__navigation {
 		display: flex;
 		flex-direction: row;
+		gap: var(--default-grid-baseline);
 		justify-content: space-between;
-		margin-top: 10px;
+		margin-top: calc(2 * var(--default-grid-baseline));
 	}
 }
 
@@ -573,7 +459,7 @@ export default {
 			align-items: center;
 			width: var(--default-clickable-area);
 			height: var(--default-clickable-area);
-			margin-left: 6px;
+			margin-inline-start: 6px;
 			filter: var(--background-invert-if-dark);
 		}
 
@@ -624,5 +510,175 @@ export default {
 		transition: all 50ms ease-in-out;
 	}
 }
-
 </style>
+
+<docs>
+### General description
+
+This component allows the user to choose a color. It consists of 2
+actual pickers:
+
+- One simple picker with a predefined palette of colors;
+- One more advanced picker that provides the full color spectrum;
+
+### Usage
+
+* Using v-model and passing in an HTML element that will be treated as a trigger:
+
+```vue
+<template>
+	<div class="container0">
+		<NcColorPicker v-model="color">
+			<NcButton> Click Me </NcButton>
+		</NcColorPicker>
+		<NcColorPicker v-model="color" :palette="customPalette">
+			<NcButton> Click Me for a custom palette </NcButton>
+		</NcColorPicker>
+		<div :style="{'background-color': color}" class="color0" />
+	</div>
+</template>
+<script>
+export default {
+	data() {
+		return {
+			color: '#0082c9',
+			customPalette: [
+				'#E40303',
+				'#FF8C00',
+				'#FFED00',
+				'#008026',
+				'#24408E',
+				'#732982',
+				'#5BCEFA',
+				'#F5A9B8',
+				'#FFFFFF',
+				'#F5A9B8',
+			],
+		}
+	}
+}
+</script>
+<style>
+.container0 {
+	display: flex;
+	gap: 20px;
+}
+
+.color0 {
+	width: 100px;
+	height: 34px;
+	border-radius: 6px;
+}
+</style>
+```
+
+* Using v-bind for both color and open state and emitting an event that updates the color
+
+```vue
+<template>
+	<div class="container1">
+		<NcButton @click="open = !open"> Click Me </NcButton>
+		<NcColorPicker v-model="color" :open.sync="open" v-slot="{ attrs }">
+			<div v-bind="attrs" :style="{'background-color': color}" class="color1" />
+		</NcColorPicker>
+	</div>
+</template>
+<script>
+export default {
+	data() {
+		return {
+			color: '#0082c9',
+			open: false
+		}
+	},
+}
+</script>
+<style>
+.container1 {
+	display: flex;
+	gap: 20px;
+}
+
+.color1 {
+	width: 100px;
+	height: 34px;
+	border-radius: 6px;
+}
+</style>
+```
+
+* Allowing to clear the selected color
+
+```vue
+<template>
+	<div class="container1">
+		<NcColorPicker clearable v-model="color">
+			<NcButton>Click Me</NcButton>
+		</NcColorPicker>
+		<div :style="{'background-color': color}" class="color-preview" :class="{'color-preview--none': !color}" />
+	</div>
+</template>
+<script>
+export default {
+	data() {
+		return {
+			color: '#0082c9',
+			open: false
+		}
+	}
+}
+</script>
+<style scoped>
+.container1 {
+	display: flex;
+	gap: 20px;
+}
+
+.color-preview {
+	width: 100px;
+	height: 34px;
+	border: 1px solid black;
+	border-radius: 6px;
+}
+
+.color-preview--none {
+	background: repeating-conic-gradient(#808080 0 25%, #0000 0 50%) 50% / 20px 20px;
+}
+</style>
+```
+
+* Using advanced fields including HEX, RGB, and HSL:
+
+```vue
+<template>
+	<div class="container0">
+		<NcColorPicker v-model="color"
+			:advanced-fields="true">
+			<NcButton> Click Me </NcButton>
+		</NcColorPicker>
+		<div :style="{'background-color': color}" class="color0" />
+	</div>
+</template>
+<script>
+export default {
+	data() {
+		return {
+			color: '#0082c9'
+		}
+	}
+}
+</script>
+<style>
+.container0 {
+	display: flex;
+	gap: 20px;
+}
+
+.color0 {
+	width: 100px;
+	height: 34px;
+	border-radius: 6px;
+}
+</style>
+```
+</docs>

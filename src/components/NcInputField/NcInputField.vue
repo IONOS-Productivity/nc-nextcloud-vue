@@ -17,16 +17,21 @@ For a list of all available props and attributes, please check the [HTMLInputEle
 </docs>
 
 <template>
-	<div class="input-field"
+	<div
+		class="input-field"
 		:class="{
 			'input-field--disabled': disabled,
+			'input-field--error': error,
 			'input-field--label-outside': labelOutside || !isValidLabel,
 			'input-field--leading-icon': !!$scopedSlots.icon || !!$scopedSlots.default || !!$slots.default,
+			'input-field--success': success,
 			'input-field--trailing-icon': showTrailingButton || hasTrailingIcon,
 			'input-field--pill': pill,
+			'input-field--legacy': isLegacy32,
 		}">
 		<div class="input-field__main-wrapper">
-			<input v-bind="$attrs"
+			<input
+				v-bind="$attrs"
 				:id="computedId"
 				ref="input"
 				class="input-field__input"
@@ -44,7 +49,8 @@ For a list of all available props and attributes, please check the [HTMLInputEle
 				v-on="$listeners"
 				@input="handleInput">
 			<!-- Label -->
-			<label v-if="!labelOutside && isValidLabel"
+			<label
+				v-if="!labelOutside && isValidLabel"
 				class="input-field__label"
 				:for="computedId">
 				{{ label }}
@@ -60,7 +66,8 @@ For a list of all available props and attributes, please check the [HTMLInputEle
 			</div>
 
 			<!-- trailing button -->
-			<NcButton v-if="showTrailingButton"
+			<NcButton
+				v-if="showTrailingButton"
 				class="input-field__trailing-button"
 				:aria-label="trailingButtonLabel"
 				:disabled="disabled"
@@ -74,13 +81,15 @@ For a list of all available props and attributes, please check the [HTMLInputEle
 			</NcButton>
 
 			<!-- Success and error icons -->
-			<div v-else-if="success || error"
+			<div
+				v-else-if="success || error"
 				class="input-field__icon input-field__icon--trailing">
 				<Check v-if="success" :size="20" style="color: var(--color-success-text);" />
 				<AlertCircle v-else-if="error" :size="20" style="color: var(--color-error-text);" />
 			</div>
 		</div>
-		<p v-if="helperText.length > 0"
+		<p
+			v-if="helperText.length > 0"
 			:id="`${inputName}-helper-text`"
 			class="input-field__helper-text-message"
 			:class="{
@@ -95,12 +104,13 @@ For a list of all available props and attributes, please check the [HTMLInputEle
 </template>
 
 <script>
-import NcButton from '../NcButton/index.js'
-import GenRandomId from '../../utils/GenRandomId.js'
-
 import AlertCircle from 'vue-material-design-icons/AlertCircleOutline.vue'
 import Check from 'vue-material-design-icons/Check.vue'
+import NcButton from '../NcButton/NcButton.vue'
 import { useModelMigration } from '../../composables/useModelMigration.ts'
+import GenRandomId from '../../utils/GenRandomId.js'
+import { isLegacy32 } from '../../utils/legacy.ts'
+import { logger } from '../../utils/logger.ts'
 
 export default {
 	name: 'NcInputField',
@@ -121,6 +131,7 @@ export default {
 	props: {
 		/**
 		 * Removed in v9 - use `modelValue` (`v-model`) instead
+		 *
 		 * @deprecated
 		 */
 		value: {
@@ -263,6 +274,7 @@ export default {
 	emits: [
 		/**
 		 * Removed in v9 - use `update:modelValue` (`v-model`) instead
+		 *
 		 * @deprecated
 		 */
 		'update:value',
@@ -274,7 +286,9 @@ export default {
 
 	setup() {
 		const model = useModelMigration('value', 'update:value', true)
+
 		return {
+			isLegacy32,
 			model,
 		}
 	},
@@ -292,18 +306,22 @@ export default {
 			return this.success
 		},
 
-		hasPlaceholder() {
-			return this.placeholder !== '' && this.placeholder !== undefined
-		},
-
 		computedPlaceholder() {
-			return this.hasPlaceholder ? this.placeholder : this.label
+			if (this.placeholder) {
+				return this.placeholder
+			}
+			if (this.label) {
+				// if there is a label we use it as fallback on legacy but on current we need
+				// to pass at least an empty string as placeholder to make css `:placeholder-shown` work.
+				return isLegacy32 ? this.label : ''
+			}
+			return undefined
 		},
 
 		isValidLabel() {
 			const isValidLabel = this.label || this.labelOutside
 			if (!isValidLabel) {
-				console.warn('You need to add a label to the NcInputField component. Either use the prop label or use an external one, as per the example in the documentation.')
+				logger.warn('You need to add a label to the NcInputField component. Either use the prop label or use an external one, as per the example in the documentation.')
 			}
 			return isValidLabel
 		},
@@ -352,9 +370,11 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@use '../../assets/input-border.scss' as border;
 
 .input-field {
-	--input-border-radius: var(--border-radius-element, var(--border-radius-large));
+	--input-border-color: var(--color-border-maxcontrast);
+	--input-border-radius: var(--border-radius-element);
 	// The padding before the input can start (leading button or border)
 	--input-padding-start: var(--border-radius-large);
 	// The padding where the input has to end (trailing button or border)
@@ -388,15 +408,14 @@ export default {
 
 	&__main-wrapper {
 		height: var(--default-clickable-area);
+		padding: var(--border-width-input-focused, 2px);
 		position: relative;
 	}
 
 	&__input {
-		// If border width differes between focused and unfocused we need to compensate to prevent jumping
-		--input-border-width-offset: calc(var(--border-width-input-focused, 2px) - var(--border-width-input, 2px));
+		@include border.inputBorder('.input-field--legacy', var(--input-border-color));
 		background-color: var(--color-main-background);
 		color: var(--color-main-text);
-		border: var(--border-width-input, 2px) solid var(--color-border-maxcontrast);
 		border-radius: var(--input-border-radius);
 
 		cursor: pointer;
@@ -407,24 +426,33 @@ export default {
 		font-size: var(--default-font-size);
 		text-overflow: ellipsis;
 
-		height: calc(var(--default-clickable-area) - 2 * var(--input-border-width-offset)) !important;
+		padding-block: 0;
+		padding-inline: var(--input-padding-start) var(--input-padding-end);
+		height: 100% !important;
+		min-height: unset;
 		width: 100%;
-
-		padding-inline: calc(var(--input-padding-start) + var(--input-border-width-offset)) calc(var(--input-padding-end) + var(--input-border-width-offset));
-		padding-block: var(--input-border-width-offset);
 
 		&::placeholder {
 			color: var(--color-text-maxcontrast);
 		}
 
+		// prevent Blink and WebKit to add an additional button when type is set to search
+		// we have our properly styled trailing button anyways.
+		&::-webkit-search-cancel-button {
+			// its a weird bug in Blink that this rule must not be grouped with the other selectors below.
+			// otherwise it is not recognized by Blink
+			display: none;
+		}
+		&::-webkit-search-decoration,
+		&::-webkit-search-results-button,
+		&::-webkit-search-results-decoration,
+		&::-ms-clear {
+			display: none;
+		}
+
 		&:active:not([disabled]),
-		&:hover:not([disabled]),
 		&:focus:not([disabled]) {
-			border-color: var(--color-main-text);
-			border-width: var(--border-width-input-focused, 2px);
-			box-shadow: 0 0 0 2px var(--color-main-background) !important;
-			// Reset padding offset when focused
-			--input-border-width-offset: 0px;
+			--input-border-color: var(--color-main-text);
 		}
 
 		&:focus + .input-field__label,
@@ -445,7 +473,7 @@ export default {
 		}
 
 		&--success {
-			border-color: var(--color-success) !important; //Override hover border color
+			border-color: var(--color-border-success, var(--color-success)) !important; //Override hover border color
 			&:focus-visible {
 				box-shadow: rgb(248, 250, 252) 0px 0px 0px 2px, var(--color-primary-element) 0px 0px 0px 4px, rgba(0, 0, 0, 0.05) 0px 1px 2px 0px
 			}
@@ -453,7 +481,7 @@ export default {
 
 		&--error,
 		&:user-invalid {
-			border-color: var(--color-error) !important; //Override hover border color
+			border-color: var(--color-border-error, var(--color-error)) !important; //Override hover border color
 			&:focus-visible {
 				box-shadow: rgb(248, 250, 252) 0px 0px 0px 2px, var(--color-primary-element) 0px 0px 0px 4px, rgba(0, 0, 0, 0.05) 0px 1px 2px 0px
 			}
@@ -547,11 +575,24 @@ export default {
 		}
 
 		&--error {
-			color: var(--color-error-text);
+			color: var(--color-text-error, var(--color-error));
 		}
+	}
 
-		&--success {
-			color: var(--color-success-text);
+	&--error .input-field__input,
+	&__input:user-invalid {
+		--input-border-color: var(--color-border-error, var(--color-error)) !important; //Override hover border color
+		&:focus-visible {
+			box-shadow: rgb(248, 250, 252) 0px 0px 0px 2px, var(--color-primary-element) 0px 0px 0px 4px, rgba(0, 0, 0, 0.05) 0px 1px 2px 0px
+		}
+	}
+
+	&--success {
+		.input-field__input {
+			--input-border-color: var(--color-border-success, var(--color-success)) !important; //Override hover border color
+			&:focus-visible {
+				box-shadow: rgb(248, 250, 252) 0px 0px 0px 2px, var(--color-primary-element) 0px 0px 0px 4px, rgba(0, 0, 0, 0.05) 0px 1px 2px 0px
+			}
 		}
 	}
 }

@@ -9,20 +9,26 @@
 <template>
 	<div style="display: flex; gap: 8px; flex-wrap: wrap;">
 		<NcChip text="Notes.txt" />
-		<NcChip text="Files" :icon-path="mdiFile" />
-		<NcChip text="Color" :icon-path="mdiPalette" variant="tertiary" />
+		<NcChip text="Files" :icon-path="mdiFileOutline" />
+		<NcChip text="Color" :icon-path="mdiPaletteOutline" variant="tertiary" />
 		<NcChip text="Current time" :icon-path="mdiClock" no-close variant="primary" />
+		<NcChip text="Canceled" :icon-path="mdiCancel" variant="error" no-close />
+		<NcChip text="Open" :icon-path="mdiCircleOutline" variant="success" no-close />
+		<NcChip text="Due tomorrow" :icon-path="mdiAlertCircleOutline" variant="warning" no-close />
 	</div>
 </template>
 <script>
-import { mdiClock, mdiFile, mdiPalette } from '@mdi/js'
+import { mdiClock, mdiFileOutline, mdiPaletteOutline, mdiCancel, mdiCircleOutline, mdiAlertCircleOutline } from '@mdi/js'
 
 export default {
 	setup() {
 		return {
+			mdiAlertCircleOutline,
+			mdiCancel,
+			mdiCircleOutline,
 			mdiClock,
-			mdiFile,
-			mdiPalette,
+			mdiFileOutline,
+			mdiPaletteOutline,
 		}
 	}
 }
@@ -70,7 +76,8 @@ export default {
 </docs>
 
 <template>
-	<div class="nc-chip"
+	<div
+		class="nc-chip"
 		:class="{
 			[`nc-chip--${realVariant}`]: true,
 			'nc-chip--no-actions': noClose && !hasActions(),
@@ -80,7 +87,8 @@ export default {
 			<!-- @slot The icon slot can be used to set the chip icon. Make sure that the icon is not exceeding a height of `24px`. For round icons a exact size of `24px` is recommended. -->
 			<slot name="icon">
 				<!-- The default icon wrapper uses a size of 18px to ensure the icon is not clipped by the round chip style -->
-				<NcIconSvgWrapper v-if="iconPath || iconSvg"
+				<NcIconSvgWrapper
+					v-if="iconPath || iconSvg"
 					inline
 					:path="iconPath"
 					:svg="iconPath ? undefined : iconSvg"
@@ -91,13 +99,16 @@ export default {
 			<!-- @slot The default slot can be used to set the text that is shown -->
 			<slot>{{ text }}</slot>
 		</span>
-		<NcActions v-if="canClose || hasActions()"
+		<NcActions
+			v-if="canClose || hasActions()"
 			class="nc-chip__actions"
+			:container="actionsContainer"
 			:force-menu="!canClose"
 			variant="tertiary-no-background">
-			<NcActionButton v-if="canClose"
+			<NcActionButton
+				v-if="canClose"
 				close-after-click
-				@click="onClose">
+				@click="emit('close')">
 				<template #icon>
 					<NcIconSvgWrapper :path="mdiClose" :size="20" />
 				</template>
@@ -112,15 +123,15 @@ export default {
 <script setup>
 import { mdiClose } from '@mdi/js'
 import { computed, useSlots } from 'vue'
-import { t } from '../../l10n.js'
-
-import NcActions from '../NcActions/NcActions.vue'
 import NcActionButton from '../NcActionButton/NcActionButton.vue'
+import NcActions from '../NcActions/NcActions.vue'
 import NcIconSvgWrapper from '../NcIconSvgWrapper/NcIconSvgWrapper.vue'
+import { t } from '../../l10n.js'
 
 const props = defineProps({
 	/**
 	 * aria label to set on the close button
+	 *
 	 * @default 'Close'
 	 */
 	ariaLabelClose: {
@@ -129,7 +140,15 @@ const props = defineProps({
 	},
 
 	/**
-	 * Main text of the chip
+	 * Container for the actions
+	 */
+	actionsContainer: {
+		type: String,
+		default: 'body',
+	},
+
+	/**
+	 * Main text of the chip.
 	 */
 	text: {
 		type: String,
@@ -140,12 +159,13 @@ const props = defineProps({
 	 * Set the chips design variant-
 	 *
 	 * This sets the background style of the chip, similar to NcButton's `variant`.
+	 *
 	 * @deprecated will be removed with v9 - use `variant` instead.
 	 */
 	type: {
 		type: String,
 		default: 'secondary',
-		validator: (value) => ['primary', 'secondary', 'tertiary'].includes(value),
+		validator: (value) => ['primary', 'secondary', 'tertiary', 'error', 'warning', 'success'].includes(value),
 	},
 
 	/**
@@ -177,12 +197,13 @@ const props = defineProps({
 	 * Set the chips design variant-
 	 *
 	 * This sets the background style of the chip, similar to NcButton's `variant`.
+	 *
 	 * @since 8.24.0
 	 */
 	variant: {
 		type: String,
 		default: 'secondary',
-		validator: (value) => ['primary', 'secondary', 'tertiary'].includes(value),
+		validator: (value) => ['primary', 'secondary', 'tertiary', 'error', 'warning', 'success'].includes(value),
 	},
 })
 
@@ -195,13 +216,6 @@ const realVariant = computed(() => props.type !== 'secondary' ? props.type : pro
 const canClose = computed(() => !props.noClose)
 const hasActions = () => Boolean(slots.actions?.())
 const hasIcon = () => Boolean(props.iconPath || props.iconSvg || !!slots.icon?.())
-
-const onClose = () => {
-	/**
-	 * Emitted when the close button is clicked
-	 */
-	emit('close')
-}
 </script>
 
 <style scoped lang="scss">
@@ -227,14 +241,29 @@ const onClose = () => {
 		color: var(--color-primary-element-light-text);
 	}
 
+	&--error {
+		background-color: var(--color-error);
+		color: var(--color-error-text);
+	}
+
+	&--warning {
+		background-color: var(--color-warning);
+		color: var(--color-warning-text);
+	}
+
+	&--success {
+		background-color: var(--color-success);
+		color: var(--color-success-text);
+	}
+
 	&--no-actions &__text {
 		// If there are no actions we need to add some padding to ensure the text is not cut-off
-		padding-inline-end: calc(1.5 * var(--default-grid-baseline));
+		padding-inline-end: calc(2 * var(--default-grid-baseline));
 	}
 
 	&--no-icon &__text {
 		// Add some more space to the border
-		padding-inline-start: calc(1.5 * var(--default-grid-baseline));
+		padding-inline-start: calc(2 * var(--default-grid-baseline));
 	}
 
 	&__text {

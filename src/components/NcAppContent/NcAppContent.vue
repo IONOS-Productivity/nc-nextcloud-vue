@@ -92,20 +92,22 @@ export default {
 </docs>
 
 <template>
-	<main id="app-content-vue" class="app-content no-snapper" :class="{ 'app-content--has-list': hasList }">
+	<main id="app-content-vue" class="app-content no-snapper" :class="{ 'app-content--has-list': !!$scopedSlots.list }">
 		<h1 v-if="pageHeading" class="hidden-visually">
 			{{ pageHeading }}
 		</h1>
 
-		<template v-if="hasList">
+		<template v-if="!!$scopedSlots.list">
 			<!-- Mobile view does not allow resizeable panes -->
-			<div v-if="isMobile || layout === 'no-split'"
+			<div
+				v-if="isMobile || layout === 'no-split'"
 				class="app-content-wrapper app-content-wrapper--no-split"
 				:class="{
 					'app-content-wrapper--show-details': showDetails,
 					'app-content-wrapper--show-list': !showDetails,
-					'app-content-wrapper--mobile': isMobile,}">
-				<NcAppDetailsToggle v-if="showDetails" @click.native.stop.prevent="hideDetails" />
+					'app-content-wrapper--mobile': isMobile,
+				}">
+				<NcAppContentDetailsToggle v-if="showDetails" @click.native.stop.prevent="hideDetails" />
 
 				<div v-show="!showDetails">
 					<slot name="list" />
@@ -113,14 +115,17 @@ export default {
 				<slot v-if="showDetails" />
 			</div>
 			<div v-else-if="layout === 'vertical-split' || layout === 'horizontal-split'" class="app-content-wrapper">
-				<Splitpanes :horizontal="layout === 'horizontal-split'"
+				<Splitpanes
+					:horizontal="layout === 'horizontal-split'"
 					class="default-theme"
-					:class="{ 'splitpanes--horizontal': layout === 'horizontal-split',
-						'splitpanes--vertical': layout === 'vertical-split'
+					:class="{
+						'splitpanes--horizontal': layout === 'horizontal-split',
+						'splitpanes--vertical': layout === 'vertical-split',
 					}"
 					:rtl="isRtl"
 					@resized="handlePaneResize">
-					<Pane class="splitpanes__pane-list"
+					<Pane
+						class="splitpanes__pane-list"
 						:size="listPaneSize || paneDefaults.list.size"
 						:min-size="paneDefaults.list.min"
 						:max-size="paneDefaults.list.max">
@@ -128,7 +133,8 @@ export default {
 						<slot name="list" />
 					</Pane>
 
-					<Pane class="splitpanes__pane-details"
+					<Pane
+						class="splitpanes__pane-details"
 						:size="detailsPaneSize"
 						:min-size="paneDefaults.details.min"
 						:max-size="paneDefaults.details.max">
@@ -139,27 +145,26 @@ export default {
 			</div>
 		</template>
 		<!-- @slot Provide the main content to the app content -->
-		<slot v-if="!hasList" />
+		<slot v-if="!$scopedSlots.list" />
 	</main>
 </template>
 
 <script>
 import { getBuilder } from '@nextcloud/browser-storage'
+import { getCapabilities } from '@nextcloud/capabilities'
 import { emit } from '@nextcloud/event-bus'
-import { loadState } from '@nextcloud/initial-state'
 import { useSwipe } from '@vueuse/core'
-import { Splitpanes, Pane } from 'splitpanes'
-import { useIsMobile } from '../../composables/useIsMobile/index.js'
+import { Pane, Splitpanes } from 'splitpanes'
+import NcAppContentDetailsToggle from './NcAppContentDetailsToggle.vue'
+import { useIsMobile } from '../../composables/useIsMobile/index.ts'
+import { getLocalizedAppName } from '../../utils/appName.ts'
+import { logger } from '../../utils/logger.ts'
 import { isRtl } from '../../utils/rtl.ts'
-
-import NcAppDetailsToggle from './NcAppDetailsToggle.vue'
 
 import 'splitpanes/dist/splitpanes.css'
 
 const browserStorage = getBuilder('nextcloud').persist().build()
-const { name: productName } = loadState('theming', 'data', { name: 'Nextcloud' })
-const activeApp = loadState('core', 'active-app', appName)
-const localizedAppName = loadState('core', 'apps', {})[activeApp]?.name ?? appName
+const instanceName = getCapabilities().theming?.name ?? 'Nextcloud'
 
 /**
  * App content container to be used for the main content of your app
@@ -169,17 +174,20 @@ export default {
 	name: 'NcAppContent',
 
 	components: {
-		NcAppDetailsToggle,
+		NcAppContentDetailsToggle,
 		Pane,
 		Splitpanes,
 	},
+
 	props: {
 		/**
 		 * Allows to disable the control by swipe of the app navigation open state
+		 *
 		 * @deprecated will be removed with the next version - use `disableSwipe` instead
 		 */
 		allowSwipeNavigation: {
 			type: Boolean,
+			// eslint-disable-next-line vue/no-boolean-default
 			default: true,
 		},
 
@@ -193,8 +201,9 @@ export default {
 
 		/**
 		 * Allows you to set the default width of the resizable list in % on vertical-split
-		 * Allows you to set the default height of the resizable list in % on horizontal-split
-		 * Must be between listMinWidth and listMaxWidth
+		 * or respectively the default height on horizontal-split.
+		 *
+		 * Must be between `listMinWidth` and `listMaxWidth`.
 		 */
 		listSize: {
 			type: Number,
@@ -203,7 +212,7 @@ export default {
 
 		/**
 		 * Allows you to set the minimum width of the list column in % on vertical-split
-		 * Allows you to set the minimum height of the list column in % on horizontal-split
+		 * or respectively the minimum height on horizontal-split.
 		 */
 		listMinWidth: {
 			type: Number,
@@ -212,7 +221,7 @@ export default {
 
 		/**
 		 * Allows you to set the maximum width of the list column in % on vertical-split
-		 * Allows you to set the maximum height of the list column in % on horizontal-split
+		 * or respectively the maximum height on horizontal-split.
 		 */
 		listMaxWidth: {
 			type: Number,
@@ -238,16 +247,10 @@ export default {
 		 */
 		showDetails: {
 			type: Boolean,
+			// eslint-disable-next-line vue/no-boolean-default
 			default: true,
 		},
 
-		/**
-		 * Specify the `<h1>` page heading
-		 */
-		pageHeading: {
-			type: String,
-			default: null,
-		},
 		/**
 		 * Content layout used when there is a list together with content:
 		 * - `vertical-split` - a 2-column layout with list and default content separated vertically
@@ -264,11 +267,19 @@ export default {
 		},
 
 		/**
+		 * Specify the `<h1>` page heading
+		 */
+		pageHeading: {
+			type: String,
+			default: null,
+		},
+
+		/**
 		 * Allow setting the page's `<title>`
 		 *
-		 * If a page heading is set it defaults to `{pageHeading} - {appName} - {productName}` e.g. `Favorites - Files - Nextcloud`.
-		 * When the page heading and the app name is the same only one is used, e.g. `Files - Files - Nextcloud` is shown as `Files - Nextcloud`.
-		 * When setting the prop then the following format will be used: `{pageTitle} - {pageHeading || appName} - {productName}`
+		 * If a page heading is set it defaults to `{pageHeading} - {appName} - {instanceName}` e.g. `Favorites - Files - MyPersonalCloud`.
+		 * When the page heading and the app name is the same only one is used, e.g. `Files - Files - MyPersonalCloud` is shown as `Files - MyPersonalCloud`.
+		 * When setting the prop then the following format will be used: `{pageTitle} - {instanceName}`
 		 */
 		pageTitle: {
 			type: String,
@@ -278,6 +289,7 @@ export default {
 
 	emits: [
 		'update:showDetails',
+		'resize-list',
 		'resize:list',
 	],
 
@@ -291,8 +303,6 @@ export default {
 	data() {
 		return {
 			contentHeight: 0,
-			hasList: false,
-			hasContent: false,
 			swiping: {},
 			listPaneSize: this.restorePaneConfig(),
 		}
@@ -311,8 +321,8 @@ export default {
 				// In that case either you provide paneConfigKey or else it fallback
 				// to a global storage key
 				return `pane-list-size-${appName}`
-			} catch (e) {
-				console.info('[INFO] AppContent:', 'falling back to global nextcloud pane config')
+			} catch {
+				logger.info('[NcAppContent]: falling back to global nextcloud pane config')
 				return 'pane-list-size-nextcloud'
 			}
 		},
@@ -345,20 +355,27 @@ export default {
 		realPageTitle() {
 			const entries = new Set()
 			if (this.pageTitle) {
-				entries.add(this.pageTitle)
-			}
-			if (this.pageHeading) {
-				entries.add(this.pageHeading)
-			}
-			if (entries.size === 0) {
+				// when page title is set we only use that
+				// we still split to remove duplicated instanceName
+				for (const part of this.pageTitle.split(' - ')) {
+					entries.add(part)
+				}
+			} else if (this.pageHeading) {
+				// when the page heading is provided but not the title
+				// then we split to remove duplicates
+				// but also add the localized app name
+				for (const part of this.pageHeading.split(' - ')) {
+					entries.add(part)
+				}
+
+				if (entries.size > 0) {
+					entries.add(getLocalizedAppName())
+				}
+			} else {
 				return null
 			}
 
-			if (entries.size < 2) {
-				// Only add if not already pageHeading and pageTitle are included
-				entries.add(localizedAppName)
-			}
-			entries.add(productName)
+			entries.add(instanceName)
 			return [...entries.values()].join(' - ')
 		},
 	},
@@ -372,10 +389,13 @@ export default {
 				}
 			},
 		},
-	},
 
-	updated() {
-		this.checkSlots()
+		paneConfigKey: {
+			immediate: true,
+			handler() {
+				this.restorePaneConfig()
+			},
+		},
 	},
 
 	mounted() {
@@ -385,7 +405,6 @@ export default {
 			})
 		}
 
-		this.checkSlots()
 		this.restorePaneConfig()
 	},
 
@@ -418,22 +437,22 @@ export default {
 			this.listPaneSize = listPaneSize
 			/**
 			 * Emitted when the list pane is resized by the user
+			 *
+			 * @deprecated listen on `resize-list` instead
 			 */
 			this.$emit('resize:list', { size: listPaneSize })
-			console.debug('AppContent pane config', listPaneSize)
-		},
-
-		// $slots is not reactive, we need to update this manually
-		checkSlots() {
-			this.hasList = !!this.$scopedSlots.list
-			this.hasContent = !!this.$scopedSlots.default
+			/**
+			 * Emitted when the list pane is resized by the user
+			 */
+			this.$emit('resize-list', { size: listPaneSize })
+			logger.debug('AppContent pane config', { size: listPaneSize })
 		},
 
 		// browserStorage is not reactive, we need to update this manually
 		restorePaneConfig() {
 			const listPaneSize = parseInt(browserStorage.getItem(this.paneConfigID), 10)
 			if (!isNaN(listPaneSize) && listPaneSize !== this.listPaneSize) {
-				console.debug('AppContent pane config', listPaneSize)
+				logger.debug('AppContent pane config', listPaneSize)
 				this.listPaneSize = listPaneSize
 				return listPaneSize
 			}
@@ -448,6 +467,7 @@ export default {
 	},
 }
 </script>
+
 <style lang="scss" scoped>
 
 .app-content {

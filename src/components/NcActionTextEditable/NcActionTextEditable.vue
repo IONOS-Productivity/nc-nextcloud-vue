@@ -49,41 +49,46 @@ export default {
 
 <template>
 	<li class="action" :class="{ 'action--disabled': disabled }">
-		<span class="action-text-editable"
+		<span
+			class="action-text-editable"
 			@click="onClick">
 			<!-- @slot Manually provide icon -->
 			<slot name="icon">
-				<span :class="[isIconUrl ? 'action-text-editable__icon--url' : icon]"
+				<span
+					:class="[isIconUrl ? 'action-text-editable__icon--url' : icon]"
 					:style="{ backgroundImage: isIconUrl ? `url(${icon})` : null }"
 					class="action-text-editable__icon" />
 			</slot>
 
 			<!-- form and input -->
-			<form ref="form"
+			<form
+				ref="form"
 				class="action-text-editable__form"
 				:disabled="disabled"
 				@submit.prevent="onSubmit">
 				<input :id="id" type="submit" class="action-text-editable__submit">
 
 				<!-- name -->
-				<label v-if="name"
+				<label
+					v-if="name"
 					class="action-text-editable__name"
 					:for="computedId">
 					{{ name }}
 				</label>
 
-				<textarea :id="computedId"
+				<textarea
+					:id="computedId"
 					:disabled="disabled"
 					:value="model"
 					v-bind="$attrs"
-					:class="['action-text-editable__textarea', { focusable: isFocusable }]"
+					class="action-text-editable__textarea"
+					:class="{ focusable: isFocusable }"
 					@input="onInput" />
 
 				<!-- allow the custom font to inject a ::before
 					not possible on input[type=submit] -->
 				<label v-show="!disabled" :for="id" class="action-text-editable__label">
-					<ArrowLeft v-if="isRtl" :size="20" />
-					<ArrowRight v-else :size="20" />
+					<NcIconSvgWrapper directional :path="mdiArrowRight" />
 				</label>
 			</form>
 		</span>
@@ -91,21 +96,17 @@ export default {
 </template>
 
 <script>
+import { mdiArrowRight } from '@mdi/js'
 import { useModelMigration } from '../../composables/useModelMigration.ts'
 import ActionTextMixin from '../../mixins/actionText.js'
 import GenRandomId from '../../utils/GenRandomId.js'
-
-import ArrowLeft from 'vue-material-design-icons/ArrowLeft.vue'
-import ArrowRight from 'vue-material-design-icons/ArrowRight.vue'
-
-import { isRtl } from '../../utils/rtl.ts'
+import NcIconSvgWrapper from '../NcIconSvgWrapper/index.js'
 
 export default {
 	name: 'NcActionTextEditable',
 
 	components: {
-		ArrowLeft,
-		ArrowRight,
+		NcIconSvgWrapper,
 	},
 
 	mixins: [ActionTextMixin],
@@ -122,8 +123,9 @@ export default {
 		id: {
 			type: String,
 			default: () => 'action-' + GenRandomId(),
-			validator: id => id.trim() !== '',
+			validator: (id) => id.trim() !== '',
 		},
+
 		/**
 		 * disabled state of the text area
 		 */
@@ -131,14 +133,17 @@ export default {
 			type: Boolean,
 			default: false,
 		},
+
 		/**
 		 * Removed in v9 - use `modelValue` (`v-model`) instead
+		 *
 		 * @deprecated
 		 */
 		value: {
 			type: String,
 			default: undefined,
 		},
+
 		/**
 		 * value attribute of the input field
 		 */
@@ -152,6 +157,7 @@ export default {
 		'input',
 		/**
 		 * Removed in v9 - use `update:modelValue` (`v-model`) instead
+		 *
 		 * @deprecated
 		 */
 		'update:value',
@@ -170,7 +176,7 @@ export default {
 		const model = useModelMigration('value', 'update:value')
 		return {
 			model,
-			isRtl,
+			mdiArrowRight,
 		}
 	},
 
@@ -200,6 +206,7 @@ export default {
 
 			this.model = event.target.value
 		},
+
 		onSubmit(event) {
 			event.preventDefault()
 			event.stopPropagation()
@@ -220,8 +227,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import '../../assets/inputs';
-@import '../../assets/action';
+@use '../../assets/inputs.scss';
+@use '../../assets/action.scss' as *;
 @include action-active;
 @include action--disabled;
 

@@ -4,9 +4,9 @@
  */
 
 // setup styles
-import '../../styleguide/assets/default.css'
-import '../../styleguide/assets/additional.css'
 import '../../styleguide/assets/icons.css'
-
+import '../../styleguide/assets/additional.css'
+// Global state
+import '../../styleguide/window.js'
 // cypress commands
-import './commands'
+import './commands.ts'

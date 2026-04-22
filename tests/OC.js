@@ -19,8 +19,12 @@ export default {
 
 	Util: {
 		naturalSortCompare(a, b) {
-			return 0
-		}
+			return String(a).localeCompare(String(b))
+		},
+	},
+
+	config: {
+		version: '31.0.0',
 	},
 
 	coreApps: [

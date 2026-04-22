@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
+import { describe, expect, it } from '@jest/globals'
 import { mount, shallowMount } from '@vue/test-utils'
 import NcCheckboxRadioSwitch from '../../../../src/components/NcCheckboxRadioSwitch/NcCheckboxRadioSwitch.vue'
 
@@ -49,8 +50,8 @@ describe('NcCheckboxRadioSwitch', () => {
 			},
 		})
 
-		expect(wrapper.find('input').attributes('aria-labelledby')).toBe('test-id-label')
-		expect(wrapper.findComponent({ name: 'NcCheckboxContent' }).attributes('id')).toBe('test-id-label')
+		const labelById = wrapper.find('input').attributes('aria-labelledby')
+		expect(wrapper.findComponent({ name: 'NcCheckboxContent' }).find('#' + labelById).exists()).toBe(true)
 	})
 
 	it('does not set id on button content', () => {
@@ -66,5 +67,21 @@ describe('NcCheckboxRadioSwitch', () => {
 
 		expect(wrapper.find('input').exists()).toBe(false)
 		expect(wrapper.findComponent({ name: 'NcCheckboxContent' }).attributes('id')).toBe(undefined)
+	})
+
+	it('sets aria-describedby attribute correctly', () => {
+		const wrapper = mount(NcCheckboxRadioSwitch, {
+			propsData: {
+				description: 'My description',
+			},
+			slots: {
+				default: 'Test',
+			},
+		})
+
+		const describedById = wrapper.find('input').attributes('aria-describedby')
+		const descriptionElement = wrapper.findComponent({ name: 'NcCheckboxContent' }).find('#' + describedById)
+		expect(descriptionElement.exists()).toBe(true)
+		expect(descriptionElement.text()).toContain('My description')
 	})
 })

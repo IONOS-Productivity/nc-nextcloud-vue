@@ -3,9 +3,10 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
+import { describe, expect, it, test } from '@jest/globals'
 import { mount } from '@vue/test-utils'
-import NcRichText from '../../../../src/components/NcRichText/NcRichText.vue'
 import { nextTick } from 'vue'
+import NcRichText from '../../../../src/components/NcRichText/NcRichText.vue'
 
 describe('NcRichText', () => {
 	it('renders a message and responds correctly to props changes', async () => {

@@ -88,9 +88,15 @@ It extends and styles an HTMLTextAreaElement.
 </docs>
 
 <template>
-	<div class="textarea" :class="{ 'textarea--disabled': disabled }">
+	<div
+		class="textarea"
+		:class="{
+			'textarea--disabled': disabled,
+			'textarea--legacy': isLegacy32,
+		}">
 		<div class="textarea__main-wrapper">
-			<textarea v-bind="$attrs"
+			<textarea
+				v-bind="$attrs"
 				:id="computedId"
 				ref="input"
 				class="textarea__input"
@@ -101,6 +107,7 @@ It extends and styles an HTMLTextAreaElement.
 				:class="[inputClass,
 					{
 						'textarea__input--label-outside': labelOutside,
+						'textarea__input--legacy': isLegacy,
 						'textarea__input--success': success,
 						'textarea__input--error': error,
 					}]"
@@ -109,13 +116,15 @@ It extends and styles an HTMLTextAreaElement.
 				v-on="$listeners"
 				@input="handleInput" />
 			<!-- Label -->
-			<label v-if="!labelOutside && isValidLabel"
+			<label
+				v-if="!labelOutside && isValidLabel"
 				class="textarea__label"
 				:for="computedId">
 				{{ label }}
 			</label>
 		</div>
-		<p v-if="helperText.length > 0"
+		<p
+			v-if="helperText.length > 0"
 			:id="`${inputName}-helper-text`"
 			class="textarea__helper-text-message"
 			:class="{
@@ -130,11 +139,12 @@ It extends and styles an HTMLTextAreaElement.
 </template>
 
 <script>
-import GenRandomId from '../../utils/GenRandomId.js'
-
 import AlertCircle from 'vue-material-design-icons/AlertCircleOutline.vue'
 import Check from 'vue-material-design-icons/Check.vue'
 import { useModelMigration } from '../../composables/useModelMigration.ts'
+import GenRandomId from '../../utils/GenRandomId.js'
+import { isLegacy32 } from '../../utils/legacy.ts'
+import { logger } from '../../utils/logger.ts'
 
 export default {
 	name: 'NcTextArea',
@@ -154,6 +164,7 @@ export default {
 	props: {
 		/**
 		 * Removed in v9 - use `modelValue` (`v-model`) instead
+		 *
 		 * @deprecated
 		 */
 		value: {
@@ -259,6 +270,7 @@ export default {
 	emits: [
 		/**
 		 * Removed in v9 - use `update:modelValue` (`v-model`) instead
+		 *
 		 * @deprecated
 		 */
 		'update:value',
@@ -269,7 +281,9 @@ export default {
 
 	setup() {
 		const model = useModelMigration('value', 'update:value', true)
+
 		return {
+			isLegacy32,
 			model,
 		}
 	},
@@ -288,13 +302,19 @@ export default {
 		},
 
 		computedPlaceholder() {
-			return this.hasPlaceholder ? this.placeholder : this.label
+			if (this.hasPlaceholder) {
+				return this.placeholder
+			}
+			if (isLegacy32) {
+				return this.label
+			}
+			return undefined
 		},
 
 		isValidLabel() {
 			const isValidLabel = this.label || this.labelOutside
 			if (!isValidLabel) {
-				console.warn('You need to add a label to the NcInputField component. Either use the prop label or use an external one, as per the example in the documentation.')
+				logger.warn('You need to add a label to the NcInputField component. Either use the prop label or use an external one, as per the example in the documentation.')
 			}
 			return isValidLabel
 		},
@@ -338,44 +358,45 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@use '../../assets/input-border.scss' as border;
 
 .textarea {
+	--input-border-color: var(--color-border-maxcontrast);
+	--input-border-width-offset: calc(var(--border-width-input-focused, 2px) - var(--border-width-input, 2px));
 	position: relative;
 	width: 100%;
 	border-radius: var(--border-radius-large);
 	margin-block-start: 6px; // for the label in active state
 	resize: vertical;
 
-	&__main-wrapper {
-		position: relative;
-	}
-
 	&--disabled {
 		opacity: 0.7;
 		filter: saturate(0.7);
 	}
 
+	&__main-wrapper {
+		height: calc(var(--default-clickable-area) * 2);
+		padding: var(--border-width-input-focused, 2px);
+		position: relative;
+	}
+
 	&__input {
 		margin: 0;
-		padding-inline: 10px 6px; // align with label 8px margin label + 4px padding label - 2px border input
+		padding-block: var(--border-radius-element);
+		padding-inline: 10px; // align with label 8px margin label + 4px padding label - 2px border input
 		width: 100%;
-		height: calc(var(--default-clickable-area) * 2);
 		font-size: var(--default-font-size);
 		text-overflow: ellipsis;
+		cursor: pointer;
 
 		background-color: var(--color-main-background);
 		color: var(--color-main-text);
-		border: var(--border-width-input, 2px) solid var(--color-border-maxcontrast);
-		border-radius: var(--border-radius-large);
-
-		cursor: pointer;
+		@include border.inputBorder('.textarea--legacy', var(--input-border-color));
 
 		&:active:not([disabled]),
-		&:hover:not([disabled]),
 		&:focus:not([disabled]) {
-			border-width: var(--border-width-input-focused, 2px);
-			border-color: var(--color-main-text);
-			box-shadow: 0 0 0 2px var(--color-main-background) !important;
+			--input-border-width-offset: 0px;
+			--input-border-color: var(--color-main-text);
 		}
 
 		// Hide placeholder while not focussed -> show label instead (only if internal label is used)
@@ -396,14 +417,14 @@ export default {
 		}
 
 		&--success {
-			border-color: var(--color-success) !important; //Override hover border color
+			--input-border-color: var(--color-border-success, var(--color-success)) !important; //Override hover border color
 			&:focus-visible {
 				box-shadow: rgb(248, 250, 252) 0px 0px 0px 2px, var(--color-primary-element) 0px 0px 0px 4px, rgba(0, 0, 0, 0.05) 0px 1px 2px 0px
 			}
 		}
 
 		&--error {
-			border-color: var(--color-error) !important; //Override hover border color
+			--input-border-color: var(--color-border-error, var(--color-error)) !important; //Override hover border color
 			&:focus-visible {
 				box-shadow: rgb(248, 250, 252) 0px 0px 0px 2px, var(--color-primary-element) 0px 0px 0px 4px, rgba(0, 0, 0, 0.05) 0px 1px 2px 0px
 			}

@@ -15,7 +15,7 @@ This component is made to be used in the Nextcloud top header.
 				<Magnify />
 			</template>
 			<div>
-				<NcTextField label="Search for files, comments, contacts…"
+				<NcTextField label="Search for files, comments, contacts …"
 				style="padding-inline: 8px;"
 				type="search"
 				:value.sync="query" />
@@ -57,7 +57,8 @@ export default {
 </docs>
 
 <template>
-	<component :is="wrapperTag"
+	<component
+		:is="wrapperTag"
 		:id="id"
 		ref="headerMenu"
 		v-click-outside="clickOutsideConfig"
@@ -66,7 +67,8 @@ export default {
 		class="header-menu"
 		v-on="listeners">
 		<!-- Trigger -->
-		<NcButton :id="isNav ? triggerId : null"
+		<NcButton
+			:id="isNav ? triggerId : null"
 			ref="trigger"
 			class="header-menu__trigger"
 			:aria-controls="`header-menu-${id}`"
@@ -83,7 +85,8 @@ export default {
 			</template>
 		</NcButton>
 
-		<span v-if="description"
+		<span
+			v-if="description"
 			:id="descriptionId"
 			class="header-menu__description hidden-visually">
 			{{ description }}
@@ -93,7 +96,8 @@ export default {
 		<div v-show="opened" class="header-menu__carret" />
 
 		<!-- Menu opened content -->
-		<div v-show="opened"
+		<div
+			v-show="opened"
 			:id="`header-menu-${id}`"
 			class="header-menu__wrapper">
 			<div ref="content" class="header-menu__content">
@@ -107,11 +111,11 @@ export default {
 <script>
 import { vOnClickOutside as ClickOutside } from '@vueuse/components'
 import { createFocusTrap } from 'focus-trap'
-
-import GenRandomId from '../../utils/GenRandomId.js'
+import { ref } from 'vue'
+import { useTrapStackControl } from '../../composables/useTrapStackControl.ts'
 import { clickOutsideOptions } from '../../mixins/index.js'
 import { getTrapStack } from '../../utils/focusTrap.ts'
-
+import GenRandomId from '../../utils/GenRandomId.js'
 import NcButton from '../NcButton/index.js'
 
 export default {
@@ -184,10 +188,23 @@ export default {
 		'cancel',
 	],
 
+	setup(props) {
+		const opened = ref(props.open)
+
+		// When component has its own custom focus management
+		// The global focus trap stack should be paused
+		useTrapStackControl(opened, {
+			disabled: () => !props.isNav,
+		})
+
+		return {
+			opened,
+		}
+	},
+
 	data() {
 		return {
 			focusTrap: null,
-			opened: this.open,
 			shortcutsDisabled: window.OCP?.Accessibility?.disableKeyboardShortcuts?.(),
 			triggerId: GenRandomId(),
 			descriptionId: GenRandomId(),
@@ -229,6 +246,7 @@ export default {
 	mounted() {
 		document.addEventListener('keydown', this.onKeyDown)
 	},
+
 	beforeDestroy() {
 		document.removeEventListener('keydown', this.onKeyDown)
 	},
@@ -323,6 +341,7 @@ export default {
 			})
 			this.focusTrap.activate()
 		},
+
 		clearFocusTrap() {
 			this.focusTrap?.deactivate()
 			this.focusTrap = null
@@ -336,7 +355,7 @@ export default {
 // Also used for menu top-right positioning
 $externalMargin: 8px;
 
-@import './header-menu__trigger';
+@use './header-menu__trigger.scss';
 
 .header-menu {
 	&__wrapper {

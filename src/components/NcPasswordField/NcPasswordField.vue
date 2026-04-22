@@ -84,17 +84,18 @@ export default {
 </docs>
 
 <template>
-	<NcInputField v-bind="propsAndAttrsToForward"
+	<NcInputField
+		v-bind="propsAndAttrsToForward"
 		ref="inputField"
-		:type="isPasswordHidden && !asText ? 'password' : 'text'"
+		:type="visibility || asText ? 'text' : 'password'"
 		:trailing-button-label="trailingButtonLabelPassword"
 		:helper-text="computedHelperText"
 		:error="computedError"
 		:success="computedSuccess"
 		:minlength="rules.minlength"
-		:input-class="{ 'password-field__input--secure-text': isPasswordHidden && asText }"
+		:input-class="{ 'password-field__input--secure-text': !visibility && asText }"
 		v-on="$listeners"
-		@trailing-button-click="togglePasswordVisibility"
+		@trailing-button-click="toggleVisibility"
 		@input="handleInput">
 		<template v-if="!!$scopedSlots.icon || !!$slots.default || !!$scopedSlots.default" #icon>
 			<!-- @slot Leading icon -->
@@ -105,25 +106,24 @@ export default {
 		</template>
 
 		<template #trailing-button-icon>
-			<Eye v-if="isPasswordHidden" :size="18" />
-			<EyeOff v-else :size="18" />
+			<IconEyeOff v-if="visibility" :size="18" />
+			<IconEye v-else :size="18" />
 		</template>
 	</NcInputField>
 </template>
 
 <script>
-import { generateOcsUrl } from '@nextcloud/router'
-import { loadState } from '@nextcloud/initial-state'
 import axios from '@nextcloud/axios'
+import { loadState } from '@nextcloud/initial-state'
+import { generateOcsUrl } from '@nextcloud/router'
+import { useVModel } from '@vueuse/core'
 import debounce from 'debounce'
-
-import Eye from 'vue-material-design-icons/Eye.vue'
-import EyeOff from 'vue-material-design-icons/EyeOff.vue'
-
-import { logger } from '../../utils/logger.ts'
-import { t } from '../../l10n.js'
-import { useModelMigration } from '../../composables/useModelMigration.ts'
+import IconEye from 'vue-material-design-icons/Eye.vue'
+import IconEyeOff from 'vue-material-design-icons/EyeOff.vue'
 import NcInputField from '../NcInputField/NcInputField.vue'
+import { useModelMigration } from '../../composables/useModelMigration.ts'
+import { t } from '../../l10n.js'
+import { logger } from '../../utils/logger.ts'
 
 /**
  * @typedef PasswordPolicy
@@ -147,8 +147,8 @@ export default {
 
 	components: {
 		NcInputField,
-		Eye,
-		EyeOff,
+		IconEye,
+		IconEyeOff,
 	},
 
 	// Allow forwarding all attributes
@@ -175,13 +175,15 @@ export default {
 		/**
 		 * Controls whether to display the trailing button.
 		 */
-		 showTrailingButton: {
+		showTrailingButton: {
 			type: Boolean,
+			// eslint-disable-next-line vue/no-boolean-default
 			default: true,
 		},
 
-		// Removed NcInputField props, defined only by this component
-
+		/**
+		 * Removed NcInputField props, defined only by this component
+		 */
 		trailingButtonLabel: undefined,
 
 		// Custom props
@@ -204,7 +206,7 @@ export default {
 		 */
 		minlength: {
 			type: Number,
-			default: 0,
+			default: undefined,
 		},
 
 		/**
@@ -227,6 +229,15 @@ export default {
 			type: Boolean,
 			default: false,
 		},
+
+		/**
+		 * Visibility of the password.
+		 * If this is set to `true` then the password will be shown to the user (input type will be set to `text`).
+		 */
+		visible: {
+			type: Boolean,
+			default: false,
+		},
 	},
 
 	emits: [
@@ -234,6 +245,7 @@ export default {
 		'invalid',
 		/**
 		 * Removed in v9 - use `update:modelValue` (`v-model`) instead
+		 *
 		 * @deprecated
 		 */
 		'update:value',
@@ -246,18 +258,28 @@ export default {
 		'update:modelValue',
 		/** Same as update:modelValue for Vue 2 compatibility */
 		'update:model-value',
+		/**
+		 * Updated visibility of the password
+		 *
+		 * @property {boolean} visible the new visibility state
+		 */
+		'update:visible',
 	],
 
-	setup() {
+	setup(props, { emit }) {
 		const model = useModelMigration('value', 'update:value')
+		const visibility = useVModel(props, 'visible', emit, { passive: true })
+
 		return {
+			t,
+
 			model,
+			visibility,
 		}
 	},
 
 	data() {
 		return {
-			isPasswordHidden: true,
 			internalHelpMessage: '',
 			isValid: null,
 		}
@@ -267,9 +289,11 @@ export default {
 		computedError() {
 			return this.error || this.isValid === false
 		},
+
 		computedSuccess() {
 			return this.success || this.isValid === true
 		},
+
 		computedHelperText() {
 			if (this.helperText.length > 0) {
 				return this.helperText
@@ -280,12 +304,12 @@ export default {
 		rules() {
 			const { minlength } = this
 			return {
-				minlength: minlength ?? passwordPolicy?.minLength,
+				minlength: minlength ?? (this.checkPasswordStrength ? passwordPolicy?.minLength : undefined),
 			}
 		},
 
 		trailingButtonLabelPassword() {
-			return this.isPasswordHidden ? t('Show password') : t('Hide password')
+			return this.visibility ? t('Hide password') : t('Show password')
 		},
 
 		propsAndAttrsToForward() {
@@ -293,9 +317,7 @@ export default {
 				// Proxy all the HTML attributes
 				...this.$attrs,
 				// Proxy original NcInputField's props
-				...Object.fromEntries(
-					Object.entries(this.$props).filter(([key]) => NcInputFieldProps.has(key)),
-				),
+				...Object.fromEntries(Object.entries(this.$props).filter(([key]) => NcInputFieldProps.has(key))),
 			}
 		},
 	},
@@ -333,9 +355,11 @@ export default {
 		handleInput(event) {
 			this.model = event.target.value
 		},
-		togglePasswordVisibility() {
-			this.isPasswordHidden = !this.isPasswordHidden
+
+		toggleVisibility() {
+			this.visibility = !this.visibility
 		},
+
 		checkPassword: debounce(async function(password) {
 			try {
 				const { data } = await axios.post(generateOcsUrl('apps/password_policy/api/v1/validate'), { password })

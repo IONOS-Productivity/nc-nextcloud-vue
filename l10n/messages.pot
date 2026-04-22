@@ -27,6 +27,10 @@ msgstr ""
 msgid "Add to a project"
 msgstr ""
 
+#. TRANSLATORS: Alt key on keyboard (Windows/Linux)
+msgid "Alt"
+msgstr ""
+
 msgid "Animals & Nature"
 msgstr ""
 
@@ -50,6 +54,9 @@ msgid "Back"
 msgstr ""
 
 msgid "Back to provider selection"
+msgstr ""
+
+msgid "Black"
 msgstr ""
 
 #. TRANSLATORS: A color name for RGB(91, 100, 179)
@@ -105,10 +112,24 @@ msgstr ""
 msgid "Connect items to a project to make them easier to find"
 msgstr ""
 
+msgid "Copied"
+msgstr ""
+
+msgid "Copy to clipboard"
+msgstr ""
+
+#. TRANSLATORS: Ctrl key on keyboard (Windows/Linux)
+msgid "Ctrl"
+msgstr ""
+
 msgid "Custom"
 msgstr ""
 
 msgid "Dark skin tone"
+msgstr ""
+
+#. TRANSLATORS: Delete key on keyboard
+msgid "Delete"
 msgstr ""
 
 #. TRANSLATORS: A color name for RGB(136, 85, 168)
@@ -130,10 +151,18 @@ msgstr ""
 msgid "Enable interactive view"
 msgstr ""
 
+#. TRANSLATORS: Enter key on keyboard
+msgid "Enter"
+msgstr ""
+
 msgid "Enter link"
 msgstr ""
 
 msgid "Error getting related resources. Please contact your system administrator if you have any questions."
+msgstr ""
+
+#. TRANSLATORS: Escape key on keyboard
+msgid "Escape"
 msgstr ""
 
 msgid "External documentation for {name}"
@@ -164,9 +193,6 @@ msgstr ""
 msgid "Frequently used"
 msgstr ""
 
-msgid "Global"
-msgstr ""
-
 msgid "Go back to the list"
 msgstr ""
 
@@ -185,6 +211,9 @@ msgstr ""
 msgid "Keyboard navigation help"
 msgstr ""
 
+msgid "Keyboard shortcuts"
+msgstr ""
+
 msgid "Light skin tone"
 msgstr ""
 
@@ -192,7 +221,7 @@ msgid "Load more \"{options}\""
 msgstr ""
 
 #. TRANSLATORS: The button is in a loading state
-msgid "Loading …"
+msgid "Loading …"
 msgstr ""
 
 #. TRANSLATORS: A color name for RGB(45, 115, 190)
@@ -213,7 +242,7 @@ msgid_plural "Message limit of %n characters reached"
 msgstr[0] ""
 msgstr[1] ""
 
-msgid "More items …"
+msgid "More items …"
 msgstr ""
 
 msgid "More options"
@@ -226,6 +255,9 @@ msgid "Next"
 msgstr ""
 
 msgid "Nextcloud blue"
+msgstr ""
+
+msgid "No color"
 msgstr ""
 
 msgid "No emoji found"
@@ -329,6 +361,9 @@ msgstr ""
 msgid "Search"
 msgstr ""
 
+msgid "Search …"
+msgstr ""
+
 msgid "Search emoji"
 msgstr ""
 
@@ -336,9 +371,6 @@ msgid "Search for time zone"
 msgstr ""
 
 msgid "Search results"
-msgstr ""
-
-msgid "Search…"
 msgstr ""
 
 #. FOR TRANSLATORS: If possible in your language an even shorter version of 'a few seconds ago'
@@ -367,6 +399,10 @@ msgstr ""
 msgid "Settings navigation"
 msgstr ""
 
+#. TRANSLATORS: Shift key on keyboard
+msgid "Shift"
+msgstr ""
+
 msgid "Show details"
 msgstr ""
 
@@ -388,6 +424,10 @@ msgstr ""
 msgid "Smileys & Emotion"
 msgstr ""
 
+#. TRANSLATORS: Space key on keyboard
+msgid "Space"
+msgstr ""
+
 msgid "Start slideshow"
 msgstr ""
 
@@ -398,6 +438,10 @@ msgid "Submit"
 msgstr ""
 
 msgid "Symbols"
+msgstr ""
+
+#. TRANSLATORS: Tab key on keyboard
+msgid "Tab"
 msgstr ""
 
 msgid "Travel & Places"
@@ -425,5 +469,8 @@ msgstr ""
 msgid "Whiskey"
 msgstr ""
 
-msgid "Write a message …"
+msgid "White"
+msgstr ""
+
+msgid "Write a message …"
 msgstr ""

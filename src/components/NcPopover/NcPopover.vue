@@ -140,12 +140,14 @@ See: https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/
 </docs>
 
 <template>
-	<Dropdown ref="popover"
+	<Dropdown
+		ref="popover"
 		:distance="10"
 		:arrow-padding="10"
 		v-bind="$attrs"
 		:no-auto-focus="true /* Handled by the focus trap */"
-		:popper-class="popoverBaseClass"
+		:popper-class="[$style.ncPopover, popoverBaseClass]"
+		:theme="THEME"
 		:shown="internalShown"
 		v-on="$listeners"
 		@update:shown="internalShown = $event"
@@ -164,16 +166,24 @@ See: https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/
 </template>
 
 <script>
-import Vue from 'vue'
-import { Dropdown } from 'floating-vue'
+import { Dropdown, options } from 'floating-vue'
 import { createFocusTrap } from 'focus-trap'
-import { getTrapStack } from '../../utils/focusTrap.ts'
+import { tabbable } from 'tabbable'
+import Vue from 'vue'
 import NcPopoverTriggerProvider from './NcPopoverTriggerProvider.vue'
+import { getTrapStack } from '../../utils/focusTrap.ts'
+import { logger } from '../../utils/logger.ts'
+
+const THEME = 'nc-popover-8'
+
+// NcPopover has a custom theme to have a custom name but same as the default "dropdown" theme
+options.themes[THEME] = structuredClone(options.themes.dropdown)
 
 /**
  * @typedef {import('focus-trap').FocusTargetValueOrFalse} FocusTargetValueOrFalse
  * @typedef {FocusTargetValueOrFalse|() => FocusTargetValueOrFalse} SetReturnFocus
  */
+
 export default {
 	name: 'NcPopover',
 
@@ -187,6 +197,7 @@ export default {
 	props: {
 		/**
 		 * Show or hide the popper
+		 *
 		 * @see https://floating-vue.starpad.dev/api/#shown
 		 */
 		shown: {
@@ -196,6 +207,7 @@ export default {
 
 		/**
 		 * Popup role
+		 *
 		 * @see https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-haspopup#values
 		 */
 		popupRole: {
@@ -204,6 +216,9 @@ export default {
 			validator: (value) => ['menu', 'listbox', 'tree', 'grid', 'dialog', 'true'].includes(value),
 		},
 
+		/**
+		 * Class to be applied to the popover base
+		 */
 		popoverBaseClass: {
 			type: String,
 			default: '',
@@ -216,6 +231,7 @@ export default {
 		 */
 		focusTrap: {
 			type: Boolean,
+			// eslint-disable-next-line vue/no-boolean-default
 			default: true,
 		},
 
@@ -234,7 +250,16 @@ export default {
 		 */
 		setReturnFocus: {
 			default: undefined,
-			type: [HTMLElement, SVGElement, String, Boolean, Function],
+			type: [Boolean, HTMLElement, SVGElement, String, Function],
+		},
+
+		/**
+		 * When there is no setReturnFocus, NcPopover will try to return focus to the trigger button.
+		 * Use this prop to disable this behavior.
+		 */
+		noAutoReturnFocus: {
+			type: Boolean,
+			default: false,
 		},
 	},
 
@@ -247,6 +272,12 @@ export default {
 		'update:shown',
 	],
 
+	setup() {
+		return {
+			THEME,
+		}
+	},
+
 	data() {
 		return {
 			internalShown: this.shown,
@@ -256,15 +287,14 @@ export default {
 	watch: {
 		shown(value) {
 			this.internalShown = value
+			if (this.internalShown) {
+				this.checkTriggerA11y()
+			}
 		},
 
 		internalShown(value) {
 			this.$emit('update:shown', value)
 		},
-	},
-
-	mounted() {
-		this.checkTriggerA11y()
 	},
 
 	beforeDestroy() {
@@ -279,9 +309,8 @@ export default {
 		 */
 		checkTriggerA11y() {
 			if (window.OC?.debug) {
-				const triggerContainer = this.getPopoverTriggerContainerElement()
-				const requiredTriggerButton = triggerContainer.querySelector('[aria-expanded]')
-				if (!requiredTriggerButton) {
+				const triggerButton = this.getPopoverTriggerButtonElement()
+				if (!triggerButton || !triggerButton.hasAttributes('aria-expanded', 'aria-haspopup')) {
 					Vue.util.warn('It looks like you are using a custom button as a <NcPopover> or other popover #trigger. If you are not using <NcButton> as a trigger, you need to bind attrs from the #trigger slot props to your custom button. See <NcPopover> docs for an example.')
 				}
 			}
@@ -289,11 +318,12 @@ export default {
 
 		/**
 		 * Remove incorrect aria-describedby attribute from the trigger.
+		 *
 		 * @see https://github.com/Akryum/floating-vue/blob/8d4f7125aae0e3ea00ba4093d6d2001ab15058f1/packages/floating-vue/src/components/Popper.ts#L734
 		 */
 		removeFloatingVueAriaDescribedBy() {
 			// When the popover is shown, floating-vue mutates the root elements of the trigger adding data-popper-shown and incorrect aria-describedby attributes.
-			const triggerContainer = this.getPopoverTriggerContainerElement()
+			const triggerContainer = this.getPopoverTriggerElement()
 			const triggerElements = triggerContainer.querySelectorAll('[data-popper-shown]')
 			for (const el of triggerElements) {
 				el.removeAttribute('aria-describedby')
@@ -310,10 +340,18 @@ export default {
 		/**
 		 * @return {HTMLElement|undefined}
 		 */
-		getPopoverTriggerContainerElement() {
+		getPopoverTriggerElement() {
 			// TODO: Vue 3: should be
 			// this.$refs.popover.$refs.popper.$refs.reference
 			return this.$refs.popover.$refs.reference
+		},
+
+		/**
+		 * @return {HTMLElement|undefined}
+		 */
+		getPopoverTriggerButtonElement() {
+			const triggerContainer = this.getPopoverTriggerElement()
+			return triggerContainer && tabbable(triggerContainer)[0]
 		},
 
 		/**
@@ -339,7 +377,7 @@ export default {
 				// Focus will be release when popover be hide
 				escapeDeactivates: false,
 				allowOutsideClick: true,
-				setReturnFocus: this.setReturnFocus,
+				setReturnFocus: this.setReturnFocus || (!this.noAutoReturnFocus && this.getPopoverTriggerButtonElement()),
 				trapStack: getTrapStack(),
 				fallBackFocus: el,
 			})
@@ -355,8 +393,8 @@ export default {
 			try {
 				this.$focusTrap?.deactivate(options)
 				this.$focusTrap = null
-			} catch (err) {
-				console.warn(err)
+			} catch (error) {
+				logger.warn('Could not clear focus trap', { error })
 			}
 		},
 
@@ -407,6 +445,7 @@ export default {
 			await this.useFocusTrap()
 			this.addEscapeStopPropagation()
 		},
+
 		afterHide() {
 			this.getPopoverContentElement().addEventListener('transitionend', () => {
 				/**
@@ -426,51 +465,52 @@ export default {
 }
 </script>
 
-<style lang="scss">
+<style lang="scss" module>
 $arrow-width: 10px;
 // Move the arrow just slightly inside the popover
 // To prevent a visual gap on page scaling
 $arrow-position: $arrow-width - 1px;
 
-// Size class comes from the floating-vue library we use
-.resize-observer {
-	position: absolute;
-	top: 0;
-	/* stylelint-disable-next-line csstools/use-logical */ /* upstream logic */
-	left: 0;
-	z-index: -1;
-	width: 100%;
-	height: 100%;
-	border: none;
-	background-color: transparent;
-	pointer-events: none;
-	display: block;
-	overflow: hidden;
-	opacity: 0;
-
-	object {
-		display: block;
+// Class is built by floating-vue as "v-popper--theme-{THEME}"
+.ncPopover:global(.v-popper--theme-nc-popover-8) {
+	// Size class comes from the floating-vue library we use
+	:global(.resize-observer) {
 		position: absolute;
 		top: 0;
 		/* stylelint-disable-next-line csstools/use-logical */ /* upstream logic */
 		left: 0;
-		height: 100%;
-		width: 100%;
-		overflow: hidden;
-		pointer-events: none;
 		z-index: -1;
-	}
-}
+		width: 100%;
+		height: 100%;
+		border: none;
+		background-color: transparent;
+		pointer-events: none;
+		display: block;
+		overflow: hidden;
+		opacity: 0;
 
-.v-popper--theme-dropdown {
-	&.v-popper__popper {
+		object {
+			display: block;
+			position: absolute;
+			top: 0;
+			/* stylelint-disable-next-line csstools/use-logical */ /* upstream logic */
+			left: 0;
+			height: 100%;
+			width: 100%;
+			overflow: hidden;
+			pointer-events: none;
+			z-index: -1;
+		}
+	}
+
+	&:global(.v-popper__popper) {
 		z-index: 100000;
 		top: 0;
 		/* stylelint-disable-next-line csstools/use-logical */ /* upstream logic */
 		left: 0;
 		display: block !important;
 
-		.v-popper__wrapper {
+		:global(.v-popper__wrapper) {
 			/*
 			 * In theory, "filter: drop-shadow" would look better here with arrow shadow.
 			 * In fact, in results in a blurry popover in Chromium on scaling.
@@ -483,7 +523,7 @@ $arrow-position: $arrow-width - 1px;
 			border-radius: var(--border-radius-large);
 		}
 
-		.v-popper__inner {
+		:global(.v-popper__inner) {
 			padding: 0;
 			color: var(--color-main-text);
 			border-radius: var(--border-radius-large);
@@ -491,7 +531,7 @@ $arrow-position: $arrow-width - 1px;
 			background: var(--color-main-background);
 		}
 
-		.v-popper__arrow-container {
+		:global(.v-popper__arrow-container) {
 			position: absolute;
 			z-index: 1;
 			width: 0;
@@ -501,7 +541,7 @@ $arrow-position: $arrow-width - 1px;
 			border-width: $arrow-width;
 		}
 
-		&[data-popper-placement^='top'] .v-popper__arrow-container {
+		&[data-popper-placement^='top'] :global(.v-popper__arrow-container) {
 			bottom: -$arrow-position;
 			/* stylelint-disable-next-line csstools/use-logical */ /* upstream logic */
 			border-bottom-width: 0;
@@ -509,7 +549,7 @@ $arrow-position: $arrow-width - 1px;
 			border-top-color: var(--color-main-background);
 		}
 
-		&[data-popper-placement^='bottom'] .v-popper__arrow-container {
+		&[data-popper-placement^='bottom'] :global(.v-popper__arrow-container) {
 			top: -$arrow-position;
 			/* stylelint-disable-next-line csstools/use-logical */ /* upstream logic */
 			border-top-width: 0;
@@ -517,7 +557,7 @@ $arrow-position: $arrow-width - 1px;
 			border-bottom-color: var(--color-main-background);
 		}
 
-		&[data-popper-placement^='right'] .v-popper__arrow-container {
+		&[data-popper-placement^='right'] :global(.v-popper__arrow-container) {
 			/* stylelint-disable-next-line csstools/use-logical */ /* upstream logic */
 			left: -$arrow-position;
 			/* stylelint-disable-next-line csstools/use-logical */ /* upstream logic */
@@ -526,7 +566,7 @@ $arrow-position: $arrow-width - 1px;
 			border-right-color: var(--color-main-background);
 		}
 
-		&[data-popper-placement^='left'] .v-popper__arrow-container {
+		&[data-popper-placement^='left'] :global(.v-popper__arrow-container) {
 			/* stylelint-disable-next-line csstools/use-logical */ /* upstream logic */
 			right: -$arrow-position;
 			/* stylelint-disable-next-line csstools/use-logical */ /* upstream logic */

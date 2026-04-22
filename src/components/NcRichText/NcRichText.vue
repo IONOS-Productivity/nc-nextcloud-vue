@@ -77,7 +77,7 @@ It is also possible to make a rendered content interactive and listen for events
 		<NcRichText :text="text"
 			:use-extended-markdown="true"
 			:interactive="true"
-			@interact:todo="handleInteraction"/>
+			@interact-todo="handleInteraction"/>
 	</div>
 </template>
 <script>
@@ -302,22 +302,28 @@ See [NcRichContenteditable](#/Components/NcRichContenteditable) documentation fo
 </docs>
 
 <script>
-import { ref } from 'vue'
-import NcReferenceList from './NcReferenceList.vue'
-import NcCheckboxRadioSwitch from '../NcCheckboxRadioSwitch/NcCheckboxRadioSwitch.vue'
-import { getRoute, remarkAutolink } from './autolink.js'
-import { remarkPlaceholder, prepareTextNode } from './placeholder.js'
-import { remarkUnescape } from './remarkUnescape.js'
-import GenRandomId from '../../utils/GenRandomId.js'
-
-import { unified } from 'unified'
-import remarkParse from 'remark-parse'
-import remarkGfm from 'remark-gfm'
-import breaks from 'remark-breaks'
-import remark2rehype from 'remark-rehype'
-import rehype2react from 'rehype-react'
 import rehypeExternalLinks from 'rehype-external-links'
+import rehype2react from 'rehype-react'
+import breaks from 'remark-breaks'
+import remarkGfm from 'remark-gfm'
+import remarkParse from 'remark-parse'
+import remark2rehype from 'remark-rehype'
+import remarkUnlinkProtocols from 'remark-unlink-protocols'
+import { unified } from 'unified'
+import { ref } from 'vue'
 import { RouterLink } from 'vue-router'
+import NcCheckboxRadioSwitch from '../NcCheckboxRadioSwitch/NcCheckboxRadioSwitch.vue'
+import NcReferenceList from './NcReferenceList.vue'
+import NcRichTextCopyButton from './NcRichTextCopyButton.vue'
+import GenRandomId from '../../utils/GenRandomId.js'
+import { getRoute, remarkAutolink } from './autolink.js'
+import { prepareTextNode, remarkPlaceholder } from './placeholder.js'
+import { remarkUnescape } from './remarkUnescape.js'
+
+/**
+ * Protocols allowed in links.
+ */
+const LINK_PROTOCOLS = ['http', 'https', 'mailto', 'tel']
 
 /**
  * Heavy libraries should be loaded on demand to reduce component size
@@ -336,55 +342,72 @@ export default {
 	components: {
 		NcReferenceList,
 	},
+
+	/* eslint vue/require-prop-comment: warn -- TODO: Add a proper doc block about what this props do */
 	props: {
 		text: {
 			type: String,
 			default: '',
 		},
+
 		arguments: {
 			type: Object,
 			default: () => {
 				return {}
 			},
 		},
+
 		referenceLimit: {
 			type: Number,
 			default: 0,
 		},
+
 		referenceInteractive: {
 			type: Boolean,
+			// eslint-disable-next-line vue/no-boolean-default
 			default: true,
 		},
+
 		referenceInteractiveOptIn: {
 			type: Boolean,
 			default: false,
 		},
+
 		/** Provide data upfront to avoid extra http request */
 		references: {
 			type: Array,
 			default: null,
 		},
+
 		/** Provide basic Markdown syntax */
 		useMarkdown: {
 			type: Boolean,
 			default: false,
 		},
+
 		/** Provide GitHub Flavored Markdown syntax */
 		useExtendedMarkdown: {
 			type: Boolean,
 			default: false,
 		},
+
 		/** Provide event from rendered markdown inputs */
 		interactive: {
 			type: Boolean,
 			default: false,
 		},
+
 		autolink: {
 			type: Boolean,
+			// eslint-disable-next-line vue/no-boolean-default
 			default: true,
 		},
 	},
-	emits: ['interact:todo'],
+
+	emits: [
+		'interact-todo',
+		'interact:todo',
+	],
 
 	data() {
 		return {
@@ -394,16 +417,15 @@ export default {
 
 	methods: {
 		renderPlaintext(h) {
-			const context = this
-			const placeholders = this.text.split(/(\{[a-z\-_.0-9]+\})/ig).map(function(entry, index, list) {
+			const placeholders = this.text.split(/(\{[a-z\-_.0-9]+\})/ig).map((entry) => {
 				const matches = entry.match(/^\{([a-z\-_.0-9]+)\}$/i)
 				// just return plain string nodes as text
 				if (!matches) {
-					return prepareTextNode({ h, context }, entry)
+					return prepareTextNode({ h, context: this }, entry)
 				}
 				// return component instance if argument is an object
 				const argumentId = matches[1]
-				const argument = context.arguments[argumentId]
+				const argument = this.arguments[argumentId]
 				if (typeof argument === 'object') {
 					const { component, props } = argument
 					return h(component, {
@@ -420,18 +442,19 @@ export default {
 				h('div', {}, placeholders.flat()),
 				this.referenceLimit > 0
 					? h('div', { class: 'rich-text--reference-widget' }, [
-						h(NcReferenceList, {
-							props: {
-								text: this.text,
-								referenceData: this.references,
-								interactive: this.referenceInteractive,
-								interactiveOptIn: this.referenceInteractiveOptIn,
-							},
-						}),
-					])
+							h(NcReferenceList, {
+								props: {
+									text: this.text,
+									referenceData: this.references,
+									interactive: this.referenceInteractive,
+									interactiveOptIn: this.referenceInteractiveOptIn,
+								},
+							}),
+						])
 					: null,
 			])
 		},
+
 		renderMarkdown(h) {
 			const renderedMarkdown = unified()
 				.use(remarkParse)
@@ -443,6 +466,7 @@ export default {
 				.use(remarkUnescape)
 				.use(this.useExtendedMarkdown ? remarkGfm : undefined)
 				.use(breaks)
+				.use(remarkUnlinkProtocols, { except: LINK_PROTOCOLS })
 				.use(remark2rehype, {
 					handlers: {
 						component(toHast, node) {
@@ -459,11 +483,31 @@ export default {
 				.use(rehype2react, {
 					createElement: (tag, attrs, children) => {
 						if (!tag.startsWith('#')) {
+							// <h1>..<h3> headings are used on the page for semantic structure
+							// Using them for user content leads to accessibility issues
+							// Levelling down headings to start from <h4>
+							if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tag)) {
+								tag = `h${Math.min(+String(tag)[1] + 3, 6)}`
+							}
+
 							if (this.useExtendedMarkdown) {
 								if (tag === 'code' && !rehypeHighlight.value
 									&& attrs?.attrs?.class?.includes('language')) {
 									importRehypeHighlightLibrary()
 								}
+
+								if (tag === 'pre' && Array.isArray(children)
+									&& children[0].tag === 'code') {
+									const id = this.parentId + '-code-block-' + GenRandomId(5)
+									return h('p', { class: 'rich-text__code-block' }, [
+										h(tag, { attrs: { ...attrs, id } }, children),
+										h(NcRichTextCopyButton, {
+											props: { contentId: id },
+											class: 'rich-text__code-block-button',
+										}),
+									])
+								}
+
 								let nestedNode = null
 								if (tag === 'li' && Array.isArray(children)
 									&& children[0].tag === 'input'
@@ -485,6 +529,15 @@ export default {
 										},
 										on: {
 											'update:checked': () => {
+												/**
+												 * Emitted when a todo-list entry was interacted with
+												 */
+												this.$emit('interact-todo', id)
+												/**
+												 * Emitted when a todo-list entry was interacted with
+												 *
+												 * @deprecated listen on the `interact-todo` instead
+												 */
 												this.$emit('interact:todo', id)
 											},
 										},
@@ -537,27 +590,27 @@ export default {
 					// escape special symbol "<" to not treat text as HTML
 					.replace(/<[^>]+>/g, (match) => match.replace(/</g, '&lt;'))
 					// unescape special symbol ">" to parse blockquotes
-					.replace(/&gt;/gmi, '>'),
-				)
+					.replace(/&gt;/gmi, '>'))
 				.result
 
 			return h('div', { class: 'rich-text--wrapper rich-text--wrapper-markdown' }, [
 				renderedMarkdown,
 				this.referenceLimit > 0
 					? h('div', { class: 'rich-text--reference-widget' }, [
-						h(NcReferenceList, {
-							props: {
-								text: this.text,
-								referenceData: this.references,
-								interactive: this.referenceInteractive,
-								interactiveOptIn: this.referenceInteractiveOptIn,
-							},
-						}),
-					])
+							h(NcReferenceList, {
+								props: {
+									text: this.text,
+									referenceData: this.references,
+									interactive: this.referenceInteractive,
+									interactiveOptIn: this.referenceInteractiveOptIn,
+								},
+							}),
+						])
 					: null,
 			])
 		},
 	},
+
 	render(h) {
 		return this.useMarkdown || this.useExtendedMarkdown
 			? this.renderMarkdown(h)
@@ -565,12 +618,34 @@ export default {
 	},
 }
 </script>
+
 <style lang="scss" scoped>
-/* stylelint-disable-next-line scss/at-import-partial-extension */
 @import './richtext.scss';
 
 a:not(.rich-text--component) {
 	text-decoration: underline;
 }
 
+.rich-text__code-block {
+	position: relative;
+	padding-inline-end: calc(var(--clickable-area-small) + var(--default-grid-baseline));
+
+	& pre {
+		width: 100%;
+		overflow-x: auto;
+	}
+
+	.rich-text__code-block-button {
+		position: absolute;
+		top: var(--default-grid-baseline);
+		inset-inline-end: var(--default-grid-baseline);
+		opacity: 0;
+	}
+
+	&:hover .rich-text__code-block-button,
+	&:focus-within .rich-text__code-block-button,
+	& .rich-text__code-block-button:focus {
+		opacity: 1;
+	}
+}
 </style>

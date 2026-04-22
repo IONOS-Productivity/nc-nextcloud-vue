@@ -6,12 +6,10 @@
 
 const webpackConfig = require('@nextcloud/webpack-vue-config')
 const webpackRules = require('@nextcloud/webpack-vue-config/rules')
-
+const BabelLoaderExcludeNodeModulesExcept = require('babel-loader-exclude-node-modules-except')
 const md5 = require('md5')
 const path = require('path')
-
 const { DefinePlugin } = require('webpack')
-const BabelLoaderExcludeNodeModulesExcept = require('babel-loader-exclude-node-modules-except')
 
 const buildMode = process.env.NODE_ENV
 const isDev = buildMode === 'development'
@@ -36,16 +34,19 @@ const sassLoader = {
 			sourceMapContents: false,
 			loadPaths: [
 				path.resolve(__dirname, './src/assets'),
+				path.resolve(__dirname, 'node_modules'),
 			],
 		},
 	},
 }
 
-webpackRules.RULE_TS = {
-	test: /\.tsx?$/,
-	use: [
-		'babel-loader',
-	],
+const cssLoaderOptions = {
+	modules: {
+		namedExport: false,
+		// Same as in Vite
+		localIdentName: '_[local]_[hash:base64:5]',
+		exportLocalsConvention: 'asIs',
+	},
 }
 
 webpackRules.RULE_SCSS = {
@@ -57,12 +58,7 @@ webpackRules.RULE_SCSS = {
 				'style-loader',
 				{
 					loader: 'css-loader',
-					options: {
-						modules: {
-							// Same as in Vite
-							localIdentName: '_[local]_[hash:base64:5]',
-						},
-					},
+					options: cssLoaderOptions,
 				},
 				'resolve-url-loader',
 				sassLoader,
@@ -88,12 +84,7 @@ webpackRules.RULE_CSS = {
 				'style-loader',
 				{
 					loader: 'css-loader',
-					options: {
-						modules: {
-							// Same as in Vite
-							localIdentName: '_[local]_[hash:base64:5]',
-						},
-					},
+					options: cssLoaderOptions,
 				},
 				'resolve-url-loader',
 			],
@@ -111,6 +102,17 @@ webpackRules.RULE_CSS = {
 webpackRules.RULE_JS.exclude = BabelLoaderExcludeNodeModulesExcept([
 	'tributejs',
 ])
+
+// Speedup styleguide build
+webpackRules.RULE_TS.use = [
+	'babel-loader',
+	{
+		loader: 'ts-loader',
+		options: {
+			transpileOnly: true,
+		},
+	},
+]
 
 webpackRules.RULE_RAW_SVG = {
 	resourceQuery: /raw/,
@@ -133,6 +135,19 @@ module.exports = () => {
 		PRODUCTION: JSON.stringify(!isDev),
 		SCOPE_VERSION,
 	}))
+
+	webpackConfig.resolve.extensionAlias = {
+		'.js': ['.ts', '.js'],
+		'.mjs': ['.mts', '.mjs'],
+	}
+
+	// In Vue 2 (for some reason) vue-styleguidist uses Vue as vue/dist/vue.js - UMD module
+	// UMD (global) module doesn't support some features, such as useCssModule
+	// See: https://github.com/vuejs/vue/blob/v2.7.16/src/v3/sfc-helpers/useCssModule.ts
+	// Workaround: explicitly point to the ESM build of Vue (full version to support template compilation on the page)
+	webpackConfig.resolve.alias = {
+		vue: require.resolve('vue/dist/vue.esm.js'),
+	}
 
 	return webpackConfig
 }

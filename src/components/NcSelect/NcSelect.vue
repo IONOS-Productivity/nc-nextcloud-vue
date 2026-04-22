@@ -322,8 +322,10 @@ export default {
 </docs>
 
 <template>
-	<VueSelect class="select"
+	<VueSelect
+		class="select"
 		:class="{
+			'select--legacy': isLegacy,
 			'select--no-wrap': noWrap,
 			'user-select': userSelect,
 		}"
@@ -331,20 +333,24 @@ export default {
 		v-on="listenersToForward"
 		@search="searchString => search = searchString">
 		<template v-if="!labelOutside && inputLabel" #header>
-			<label :for="inputId"
+			<label
+				:for="inputId"
 				class="select__label">
 				{{ inputLabel }}
 			</label>
 		</template>
 		<template #search="{ attributes, events }">
-			<input :class="['vs__search', inputClass]"
+			<input
+				class="vs__search"
+				:class="inputClass"
 				v-bind="attributes"
 				:required="inputRequired"
 				dir="auto"
 				v-on="events">
 		</template>
 		<template #open-indicator="{ attributes }">
-			<ChevronDown v-bind="attributes"
+			<ChevronDown
+				v-bind="attributes"
 				fill-color="var(--vs-controls-color)"
 				:style="{
 					cursor: !disabled ? 'pointer' : null,
@@ -355,12 +361,14 @@ export default {
 		<template #option="option">
 			<!-- @slot Customize how a option is rendered. -->
 			<slot name="option" v-bind="option">
-				<NcListItemIcon v-if="userSelect"
+				<NcListItemIcon
+					v-if="userSelect"
 					v-bind="option"
 					:avatar-size="32"
 					:name="option[localLabel]"
 					:search="search" />
-				<NcEllipsisedOption v-else
+				<NcEllipsisedOption
+					v-else
 					:name="String(option[localLabel])"
 					:search="search" />
 			</slot>
@@ -368,13 +376,15 @@ export default {
 		<template #selected-option="selectedOption">
 			<!-- @slot Customize how a selected option is rendered -->
 			<slot name="selected-option" :v-bind="selectedOption">
-				<NcListItemIcon v-if="userSelect"
+				<NcListItemIcon
+					v-if="userSelect"
 					v-bind="selectedOption"
 					:avatar-size="avatarSize"
 					:name="selectedOption[localLabel]"
 					no-margin
 					:search="search" />
-				<NcEllipsisedOption v-else
+				<NcEllipsisedOption
+					v-else
 					:name="String(selectedOption[localLabel])"
 					:search="search" />
 			</slot>
@@ -393,7 +403,6 @@ export default {
 </template>
 
 <script>
-import { VueSelect } from '@nextcloud/vue-select'
 import {
 	autoUpdate,
 	computePosition,
@@ -402,18 +411,17 @@ import {
 	offset,
 	shift,
 } from '@floating-ui/dom'
+import { VueSelect } from '@nextcloud/vue-select'
 import Vue from 'vue'
-import { t } from '../../l10n.js'
-
 import ChevronDown from 'vue-material-design-icons/ChevronDown.vue'
 import Close from 'vue-material-design-icons/Close.vue'
-
-import NcEllipsisedOption from '../NcEllipsisedOption/index.js'
-import NcListItemIcon from '../NcListItemIcon/index.js'
-import NcLoadingIcon from '../NcLoadingIcon/index.js'
-
-import GenRandomId from '../../utils/GenRandomId.js'
+import NcEllipsisedOption from '../NcEllipsisedOption/NcEllipsisedOption.vue'
+import NcListItemIcon from '../NcListItemIcon/NcListItemIcon.vue'
+import NcLoadingIcon from '../NcLoadingIcon/NcLoadingIcon.vue'
 import { useModelMigration } from '../../composables/useModelMigration.ts'
+import { t } from '../../l10n.js'
+import GenRandomId from '../../utils/GenRandomId.js'
+import { isLegacy32 as isLegacy } from '../../utils/legacy.ts'
 
 import '@nextcloud/vue-select/dist/vue-select.css'
 
@@ -467,6 +475,7 @@ export default {
 		/**
 		 * Allows to customize the `aria-label` for the deselect-option button
 		 * The default is "Deselect " + optionLabel
+		 *
 		 * @type {(optionLabel: string) => string}
 		 */
 		ariaLabelDeselectOption: {
@@ -482,6 +491,7 @@ export default {
 		 */
 		appendToBody: {
 			type: Boolean,
+			// eslint-disable-next-line vue/no-boolean-default
 			default: true,
 		},
 
@@ -507,6 +517,7 @@ export default {
 		 */
 		closeOnSelect: {
 			type: Boolean,
+			// eslint-disable-next-line vue/no-boolean-default
 			default: true,
 		},
 
@@ -530,7 +541,7 @@ export default {
 			type: Object,
 			default: () => ({
 				Deselect: {
-					render: createElement => createElement(Close, {
+					render: (createElement) => createElement(Close, {
 						props: {
 							size: 20,
 							fillColor: 'var(--vs-controls-color)',
@@ -635,6 +646,7 @@ export default {
 		 */
 		keyboardFocusBorder: {
 			type: Boolean,
+			// eslint-disable-next-line vue/no-boolean-default
 			default: true,
 		},
 
@@ -763,6 +775,7 @@ export default {
 		 */
 		resetFocusOnOptionsChange: {
 			type: Boolean,
+			// eslint-disable-next-line vue/no-boolean-default
 			default: true,
 		},
 
@@ -782,6 +795,7 @@ export default {
 
 		/**
 		 * Removed in v9 - use `modelValue` (`v-model`) instead
+		 *
 		 * @deprecated
 		 */
 		value: {
@@ -829,6 +843,7 @@ export default {
 		' ',
 		/**
 		 * Removed in v9 - use `update:modelValue` (`v-model`) instead
+		 *
 		 * @deprecated
 		 */
 		'input',
@@ -847,6 +862,7 @@ export default {
 		return {
 			avatarSize,
 			model,
+			isLegacy,
 		}
 	},
 
@@ -875,7 +891,7 @@ export default {
 
 				const addClass = {
 					name: 'addClass',
-					fn(_middlewareArgs) {
+					fn(/* middlewareArgs */) {
 						dropdownMenu.classList.add('vs__dropdown-menu--floating')
 						return {}
 					},
@@ -958,12 +974,10 @@ export default {
 		propsToForward() {
 			const vueSelectKeys = [
 				...Object.keys(VueSelect.props),
-				...VueSelect.mixins.flatMap(mixin => Object.keys(mixin.props ?? {})),
+				...VueSelect.mixins.flatMap((mixin) => Object.keys(mixin.props ?? {})),
 			]
-			const initialPropsToForward = Object.fromEntries(
-				Object.entries(this.$props)
-					.filter(([key, _value]) => vueSelectKeys.includes(key)),
-			)
+			const initialPropsToForward = Object.fromEntries(Object.entries(this.$props)
+				.filter(([key]) => vueSelectKeys.includes(key)))
 			const propsToForward = {
 				...initialPropsToForward,
 				// Custom overrides of vue-select props
@@ -1002,6 +1016,8 @@ export default {
 </script>
 
 <style lang="scss">
+@use '../../assets/input-border.scss' as border;
+
 body {
 	/**
 	 * Set custom vue-select CSS variables.
@@ -1071,7 +1087,7 @@ body {
 
 .v-select.select {
 	/* Override default vue-select styles */
-	min-height: var(--default-clickable-area);
+	min-height: calc(var(--default-clickable-area) - 2 * var(--border-width-input));
 	min-width: 260px;
 	margin: 0 0 var(--default-grid-baseline);
 
@@ -1116,7 +1132,7 @@ body {
 	.vs__dropdown-toggle {
 		position: relative;
 		max-height: 100px;
-		padding: 0;
+		padding: var(--border-width-input);
 		overflow-y: auto;
 	}
 
@@ -1130,15 +1146,22 @@ body {
 	}
 
 	&.vs--open .vs__dropdown-toggle {
-		border-width: var(--border-width-input-focused);
-		outline: 2px solid var(--color-main-background);
 		border-color: var(--color-main-text);
 		border-bottom-color: transparent;
+		border-bottom-left-radius: 0;
+		border-bottom-right-radius: 0;
+		border-style: solid;
+		border-width: var(--border-width-input-focused);
+		outline: 2px solid var(--color-main-background);
+		padding: 0;
 	}
 
-	&:not(.vs--disabled, .vs--open) .vs__dropdown-toggle:hover {
-		outline: 2px solid var(--color-main-background);
-		border-color: var(--color-main-text);
+	&:not(.vs--disabled, .vs--open) {
+		.vs__dropdown-toggle:active,
+		.vs__dropdown-toggle:focus-within {
+			outline: 2px solid var(--color-main-background);
+			border-color: var(--color-main-text);
+		}
 	}
 
 	&.vs--disabled {
@@ -1205,6 +1228,10 @@ body {
 	}
 }
 
+.vs__dropdown-toggle {
+	@include border.inputLikeBorder('.select--legacy', var(--vs-border-color));
+}
+
 .vs__dropdown-menu {
 	border-width: var(--border-width-input-focused) !important;
 	border-color: var(--color-main-text) !important;
@@ -1217,7 +1244,7 @@ body {
 	padding: 4px !important;
 
 	&--floating {
-		/* Fallback styles overidden by programmatically set inline styles */
+		/* Fallback styles overridden by programmatically set inline styles */
 		width: max-content;
 		position: absolute;
 		top: 0;

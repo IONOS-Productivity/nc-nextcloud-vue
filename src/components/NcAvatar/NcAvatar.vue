@@ -23,16 +23,16 @@
 <template>
 	<NcAvatar>
 		<template #icon>
-			<AccountMultiple :size="20" />
+			<IconAccountMultipleOutline :size="20" />
 		</template>
 	</NcAvatar>
 </template>
 <script>
-import AccountMultiple from 'vue-material-design-icons/AccountMultiple.vue'
+import IconAccountMultipleOutline from 'vue-material-design-icons/AccountMultipleOutline.vue'
 
 export default {
 	components: {
-		AccountMultiple,
+		IconAccountMultipleOutline,
 	},
 }
 </script>
@@ -41,44 +41,24 @@ export default {
 ### Avatar with preloaded status
 ```
 <template>
-<div class="grid">
-	<NcAvatar user="janedoe"
-		display-name="Jane Doe"
-		:size="44"
-		:preloaded-user-status="status.online">
-	</NcAvatar>
-	<NcAvatar user="janedoe"
-		display-name="Jane Doe"
-		:size="44"
-		:preloaded-user-status="status.away">
-	</NcAvatar>
-	<NcAvatar user="janedoe"
-		display-name="Jane Doe"
-		:size="44"
-		:preloaded-user-status="status.dnd">
-	</NcAvatar>
-	<NcAvatar user="janedoe"
-		display-name="Jane Doe"
-		:size="44"
-		:preloaded-user-status="status.custom">
-	</NcAvatar>
-	<NcAvatar user="janedoe"
-		display-name="Jane Doe"
-		:preloaded-user-status="status.online">
-	</NcAvatar>
-	<NcAvatar user="janedoe"
-		display-name="Jane Doe"
-		:preloaded-user-status="status.away">
-	</NcAvatar>
-	<NcAvatar user="janedoe"
-		display-name="Jane Doe"
-		:preloaded-user-status="status.dnd">
-	</NcAvatar>
-	<NcAvatar user="janedoe"
-		display-name="Jane Doe"
-		:preloaded-user-status="status.custom">
-	</NcAvatar>
-</div>
+	<div>
+		<NcAvatar user="janedoe"
+			display-name="Jane Doe"
+			:preloaded-user-status="status.online">
+		</NcAvatar>
+		<NcAvatar user="janedoe"
+			display-name="Jane Doe"
+			:preloaded-user-status="status.away">
+		</NcAvatar>
+		<NcAvatar user="janedoe"
+			display-name="Jane Doe"
+			:preloaded-user-status="status.dnd">
+		</NcAvatar>
+		<NcAvatar user="janedoe"
+			display-name="Jane Doe"
+			:preloaded-user-status="status.custom">
+		</NcAvatar>
+	</div>
 </template>
 
 <script>
@@ -111,16 +91,6 @@ export default {
 	},
 }
 </script>
-<style>
-	.grid {
-		width: fit-content;
-		display: grid;
-		justify-content: center;
-		align-items: center;
-		gap: 8px;
-		grid-template-columns: repeat(4, 1fr);
-	}
-</style>
 ```
 
 ### Avatar for non-users
@@ -150,15 +120,82 @@ export default {
 </style>
 ```
 
-</docs>
+### Avatar size
+
+```vue
 <template>
-	<span ref="main"
+	<div>
+		<div v-for="size in [15, 24, 34, 44, 180]">
+			<span>
+				{{ size }}px
+			</span>
+			<NcAvatar user="alice-smith"
+				display-name="Alice Smith"
+				:size="size"
+				:preloaded-user-status="status.online" />
+			<NcAvatar user="bob-doe"
+				display-name="Bob Doe"
+				:size="size"
+				:preloaded-user-status="status.meeting" />
+		</div>
+		<div>
+			<div>
+				Custom: {{ customSize }}px
+			</div>
+			<NcAvatar user="alice-smith"
+				display-name="Alice Smith"
+				:size="customSize"
+				:preloaded-user-status="status.online" />
+			<NcAvatar user="bob-doe"
+				display-name="Bob Doe"
+				:size="customSize"
+				:preloaded-user-status="status.meeting" />
+		</div>
+		<div>
+			<input type="range" v-model="customSize" :min="15" :max="180" step="1" />
+		</div>
+	</div>
+</template>
+
+<script>
+import AccountMultiple from 'vue-material-design-icons/AccountMultiple.vue'
+
+export default {
+	components: {
+		AccountMultiple,
+	},
+
+	data() {
+		return {
+			customSize: 20,
+			status: {
+				online: {
+					icon: '',
+					status: 'online',
+					message: 'Available',
+				},
+				meeting: {
+					icon: '📆',
+					status: 'online',
+					message: 'In a meeting',
+				},
+			},
+		}
+	},
+}
+</script>
+```
+
+</docs>
+
+<template>
+	<span
 		v-click-outside="closeMenu"
 		:title="tooltip"
 		:class="{
 			'avatardiv--unknown': userDoesNotExist,
 			'avatardiv--with-menu': hasMenu,
-			'avatardiv--with-menu-loading': contactsMenuLoading
+			'avatardiv--with-menu-loading': contactsMenuLoading,
 		}"
 		:style="avatarStyle"
 		class="avatardiv popovermenu-wrapper">
@@ -166,7 +203,8 @@ export default {
 		<slot name="icon">
 			<!-- Avatar icon or image -->
 			<span v-if="iconClass" :class="iconClass" class="avatar-class-icon" />
-			<img v-else-if="isAvatarLoaded && !userDoesNotExist"
+			<img
+				v-else-if="isAvatarLoaded && !userDoesNotExist"
 				:src="avatarUrlLoaded"
 				:srcset="avatarSrcSetLoaded"
 				alt="">
@@ -174,17 +212,19 @@ export default {
 
 		<!-- Contact menu -->
 		<!-- We show a button if the menu is not loaded yet. -->
-		<NcButton v-if="hasMenu && menu.length === 0"
+		<NcButton
+			v-if="hasMenu && menu.length === 0"
 			:aria-label="avatarAriaLabel"
 			class="action-item action-item__menutoggle"
 			variant="tertiary-no-background"
 			@click="toggleMenu">
 			<template #icon>
 				<NcLoadingIcon v-if="contactsMenuLoading" />
-				<DotsHorizontal v-else :size="20" />
+				<IconDotsHorizontal v-else :size="20" />
 			</template>
 		</NcButton>
-		<NcActions v-else-if="hasMenu"
+		<NcActions
+			v-else-if="hasMenu"
 			:aria-label="avatarAriaLabel"
 			:container="menuContainer"
 			force-menu
@@ -192,7 +232,8 @@ export default {
 			:open.sync="contactsMenuOpenState"
 			variant="tertiary-no-background"
 			@click="toggleMenu">
-			<component :is="item.ncActionComponent"
+			<component
+				:is="item.ncActionComponent"
 				v-for="(item, key) in menu"
 				:key="key"
 				v-bind="item.ncActionComponentProps"
@@ -211,13 +252,15 @@ export default {
 		<span v-if="showUserStatusIconOnAvatar" class="avatardiv__user-status avatardiv__user-status--icon">
 			{{ userStatus.icon }}
 		</span>
-		<NcUserStatusIcon v-else-if="canDisplayUserStatus"
+		<NcUserStatusIcon
+			v-else-if="canDisplayUserStatus"
 			class="avatardiv__user-status"
 			:status="userStatus.status"
 			:aria-hidden="String(hasMenu)" />
 
 		<!-- Show the letter if no avatar nor icon class -->
-		<span v-if="showInitials"
+		<span
+			v-if="showInitials"
 			:style="initialsWrapperStyle"
 			class="avatardiv__initials-wrapper">
 			<span :style="initialsStyle" class="avatardiv__initials">
@@ -228,32 +271,31 @@ export default {
 </template>
 
 <script>
-import NcActions from '../NcActions/index.js'
+import { getCurrentUser } from '@nextcloud/auth'
+import axios from '@nextcloud/axios'
+import { getBuilder } from '@nextcloud/browser-storage'
+import { subscribe, unsubscribe } from '@nextcloud/event-bus'
+import { generateUrl } from '@nextcloud/router'
+import { vOnClickOutside as ClickOutside } from '@vueuse/components'
+import IconDotsHorizontal from 'vue-material-design-icons/DotsHorizontal.vue'
+import { getRoute } from '../../components/NcRichText/autolink.js'
+import { useIsDarkTheme } from '../../composables/useIsDarkTheme/index.ts'
+import { getEnabledContactsMenuActions } from '../../functions/contactsMenu/index.ts'
+import usernameToColor from '../../functions/usernameToColor/index.js'
+import { t } from '../../l10n.js'
+import { userStatus } from '../../mixins/index.js'
+import { getAvatarUrl } from '../../utils/getAvatarUrl.ts'
+import { logger } from '../../utils/logger.ts'
+import { getUserStatusText } from '../../utils/UserStatus.ts'
+import NcActionButton from '../NcActionButton/index.js'
 import NcActionLink from '../NcActionLink/index.js'
 import NcActionRouter from '../NcActionRouter/index.js'
+import NcActions from '../NcActions/index.js'
 import NcActionText from '../NcActionText/index.js'
-import NcActionButton from '../NcActionButton/index.js'
 import NcButton from '../NcButton/index.js'
 import NcIconSvgWrapper from '../NcIconSvgWrapper/index.js'
 import NcLoadingIcon from '../NcLoadingIcon/index.js'
 import NcUserStatusIcon from '../NcUserStatusIcon/index.js'
-import usernameToColor from '../../functions/usernameToColor/index.js'
-import { getAvatarUrl } from '../../utils/getAvatarUrl.ts'
-import { getEnabledContactsMenuActions } from '../../functions/contactsMenu/index.ts'
-import { getRoute } from '../../components/NcRichText/autolink.js'
-import { getUserStatusText } from '../../utils/UserStatus.ts'
-import { logger } from '../../utils/logger.ts'
-import { t } from '../../l10n.js'
-import { userStatus } from '../../mixins/index.js'
-
-import axios from '@nextcloud/axios'
-import DotsHorizontal from 'vue-material-design-icons/DotsHorizontal.vue'
-
-import { getCurrentUser } from '@nextcloud/auth'
-import { subscribe, unsubscribe } from '@nextcloud/event-bus'
-import { getBuilder } from '@nextcloud/browser-storage'
-import { generateUrl } from '@nextcloud/router'
-import { vOnClickOutside as ClickOutside } from '@vueuse/components'
 
 const browserStorage = getBuilder('nextcloud').persist().build()
 
@@ -284,14 +326,16 @@ export default {
 	directives: {
 		ClickOutside,
 	},
+
 	components: {
-		DotsHorizontal,
+		IconDotsHorizontal,
 		NcActions,
 		NcButton,
 		NcIconSvgWrapper,
 		NcLoadingIcon,
 		NcUserStatusIcon,
 	},
+
 	mixins: [userStatus],
 	props: {
 		/**
@@ -302,6 +346,7 @@ export default {
 			type: String,
 			default: undefined,
 		},
+
 		/**
 		 * Set a css icon-class for an icon to be used instead of the avatar.
 		 */
@@ -309,6 +354,7 @@ export default {
 			type: String,
 			default: undefined,
 		},
+
 		/**
 		 * Set the user id to fetch the avatar
 		 * either the url, user or displayName property must be defined
@@ -317,21 +363,26 @@ export default {
 			type: String,
 			default: undefined,
 		},
+
 		/**
 		 * Do not show the user status on the avatar.
 		 */
-		 hideStatus: {
+		hideStatus: {
 			type: Boolean,
 			default: false,
 		},
+
 		/**
 		 * Whether or not to display the user-status.
+		 *
 		 * @deprecated - Use `hideStatus` instead. Will be removed with v9.
 		 */
 		showUserStatus: {
 			type: Boolean,
+			// eslint-disable-next-line vue/no-boolean-default
 			default: true,
 		},
+
 		/**
 		 * Show the verbose user status (e.g. "online" / "away") instead of just the status icon.
 		 */
@@ -339,14 +390,18 @@ export default {
 			type: Boolean,
 			default: false,
 		},
+
 		/**
 		 * Whether or not to the status-icon should be used instead of online/away
+		 *
 		 * @deprecated - Use `verboseStatus` instead. Will be removed with v9.
 		 */
 		showUserStatusCompact: {
 			type: Boolean,
+			// eslint-disable-next-line vue/no-boolean-default
 			default: true,
 		},
+
 		/**
 		 * When the user status was preloaded via another source it can be handed in with this property to save the request.
 		 * If this property is not set the status will be fetched automatically.
@@ -356,6 +411,7 @@ export default {
 			type: Object,
 			default: undefined,
 		},
+
 		/**
 		 * Is the user a guest user (then we have to user a different endpoint)
 		 */
@@ -363,6 +419,7 @@ export default {
 			type: Boolean,
 			default: false,
 		},
+
 		/**
 		 * Set a display name that will be rendered as a tooltip
 		 * either the url, user or displayName property must be defined
@@ -373,6 +430,7 @@ export default {
 			type: String,
 			default: undefined,
 		},
+
 		/**
 		 * Set a size in px for the rendered avatar
 		 */
@@ -380,21 +438,26 @@ export default {
 			type: Number,
 			default: 32,
 		},
+
 		/**
 		 * Do not automatically generate a placeholder avatars if there is no real avatar is available.
 		 */
-		 noPlaceholder: {
+		noPlaceholder: {
 			type: Boolean,
 			default: false,
 		},
+
 		/**
 		 * Placeholder avatars will be automatically generated when this is set to true.
+		 *
 		 * @deprecated - Use `noPlaceholder` instead. Will be removed in v9.
 		 */
 		allowPlaceholder: {
 			type: Boolean,
+			// eslint-disable-next-line vue/no-boolean-default
 			default: true,
 		},
+
 		/**
 		 * Disable the tooltip
 		 */
@@ -402,6 +465,7 @@ export default {
 			type: Boolean,
 			default: false,
 		},
+
 		/**
 		 * Disable the menu
 		 */
@@ -409,6 +473,7 @@ export default {
 			type: Boolean,
 			default: false,
 		},
+
 		/**
 		 * Declares a custom tooltip when not null
 		 * Fallback will be the displayName
@@ -434,10 +499,19 @@ export default {
 		 * Selector for the popover menu container
 		 */
 		menuContainer: {
-			type: [String, Object, Element, Boolean],
+			type: [Boolean, String, Object, Element],
 			default: 'body',
 		},
 	},
+
+	setup() {
+		const isDarkTheme = useIsDarkTheme()
+
+		return {
+			isDarkTheme,
+		}
+	},
+
 	data() {
 		return {
 			avatarUrlLoaded: null,
@@ -451,6 +525,7 @@ export default {
 			contactsMenuOpenState: false,
 		}
 	},
+
 	computed: {
 		avatarAriaLabel() {
 			// aria-label is only allowed on interactive elements
@@ -462,12 +537,14 @@ export default {
 			}
 			return t('Avatar of {displayName}', { displayName: this.displayName ?? this.user })
 		},
+
 		canDisplayUserStatus() {
 			return !this.hideStatus
 				&& this.showUserStatus
 				&& this.hasStatus
 				&& ['online', 'away', 'busy', 'dnd'].includes(this.userStatus.status)
 		},
+
 		showUserStatusIconOnAvatar() {
 			return !this.hideStatus
 				&& this.showUserStatus
@@ -477,6 +554,7 @@ export default {
 				&& this.userStatus.status !== 'dnd'
 				&& this.userStatus.icon
 		},
+
 		/**
 		 * The user identifier, either the display name if set or the user property
 		 * If both properties are not set an empty string is returned
@@ -490,15 +568,19 @@ export default {
 			}
 			return ''
 		},
+
 		isUserDefined() {
 			return typeof this.user !== 'undefined'
 		},
+
 		isDisplayNameDefined() {
 			return typeof this.displayName !== 'undefined'
 		},
+
 		isUrlDefined() {
 			return typeof this.url !== 'undefined'
 		},
+
 		hasMenu() {
 			if (this.disableMenu) {
 				return false
@@ -513,28 +595,31 @@ export default {
 		 * True if initials should be shown as the user icon fallback
 		 */
 		showInitials() {
-			return !this.noPlaceholder && this.allowPlaceholder && this.userDoesNotExist && !(this.iconClass || this.$slots.icon)
+			return !this.noPlaceholder && this.allowPlaceholder && this.userDoesNotExist && !(this.iconClass || this.$scopedSlots.icon)
 		},
 
 		avatarStyle() {
 			return {
-				'--size': this.size + 'px',
+				'--avatar-size': this.size + 'px',
 				lineHeight: this.showInitials ? (this.size + 'px') : 0,
 				fontSize: Math.round(this.size * 0.45) + 'px',
 			}
 		},
+
 		initialsWrapperStyle() {
 			const { r, g, b } = usernameToColor(this.userIdentifier)
 			return {
 				backgroundColor: `rgba(${r}, ${g}, ${b}, 0.1)`,
 			}
 		},
+
 		initialsStyle() {
 			const { r, g, b } = usernameToColor(this.userIdentifier)
 			return {
 				color: `rgb(${r}, ${g}, ${b})`,
 			}
 		},
+
 		tooltip() {
 			if (this.disableTooltip) {
 				return false
@@ -562,10 +647,11 @@ export default {
 				 * \p{L}: Letters of all languages
 				 * \p{N}: Numbers of all languages
 				 * \s: White space for breaking the string
+				 *
 				 * @type {string}
 				 */
 				const filteredChars = user.match(/[\p{L}\p{N}\s]/gu)
-				if (filteredChars == null) {
+				if (!filteredChars) {
 					return initials
 				}
 
@@ -578,6 +664,7 @@ export default {
 			}
 			return initials.toLocaleUpperCase()
 		},
+
 		menu() {
 			const actions = this.contactsMenuActions.map((item) => {
 				const route = getRoute(this.$router, item.hyperlink)
@@ -585,13 +672,13 @@ export default {
 					ncActionComponent: route ? NcActionRouter : NcActionLink,
 					ncActionComponentProps: route
 						? {
-							to: route,
-							icon: item.icon,
-						}
+								to: route,
+								icon: item.icon,
+							}
 						: {
-							href: item.hyperlink,
-							icon: item.icon,
-						},
+								href: item.hyperlink,
+								icon: item.icon,
+							},
 					text: item.title,
 				}
 			})
@@ -647,6 +734,7 @@ export default {
 			this.userDoesNotExist = false
 			this.loadAvatarUrl()
 		},
+
 		user() {
 			this.userDoesNotExist = false
 			this.isMenuLoaded = false
@@ -662,12 +750,12 @@ export default {
 			if (!this.preloadedUserStatus) {
 				this.fetchUserStatus(this.user)
 			} else {
-				this.userStatus.status = this.preloadedUserStatus.status || ''
-				this.userStatus.message = this.preloadedUserStatus.message || ''
-				this.userStatus.icon = this.preloadedUserStatus.icon || ''
-				this.hasStatus = this.preloadedUserStatus.status !== null
+				this.setUserStatus(this.preloadedUserStatus)
 			}
 			subscribe('user_status:status.updated', this.handleUserStatusUpdated)
+		} else if (!this.hideStatus && this.preloadedUserStatus) {
+			// Always set preloaded status if provided
+			this.setUserStatus(this.preloadedUserStatus)
 		}
 	},
 
@@ -686,11 +774,13 @@ export default {
 					icon: state.icon,
 					message: state.message,
 				}
+				this.hasStatus = state.status !== null
 			}
 		},
 
 		/**
 		 * Toggle the popover menu on click or enter
+		 *
 		 * @param {KeyboardEvent|MouseEvent} event the UI event
 		 */
 		async toggleMenu(event) {
@@ -702,9 +792,11 @@ export default {
 			}
 			this.contactsMenuOpenState = !this.contactsMenuOpenState
 		},
+
 		closeMenu() {
 			this.contactsMenuOpenState = false
 		},
+
 		async fetchContactsMenu() {
 			this.contactsMenuLoading = true
 			try {
@@ -712,7 +804,7 @@ export default {
 				const { data } = await axios.post(generateUrl('contactsmenu/findOne'), `shareType=0&shareWith=${user}`)
 				this.contactsMenuData = data
 				this.contactsMenuActions = data.topAction ? [data.topAction].concat(data.actions) : data.actions
-			} catch (e) {
+			} catch {
 				this.contactsMenuOpenState = false
 			}
 			this.contactsMenuLoading = false
@@ -726,7 +818,7 @@ export default {
 			this.isAvatarLoaded = false
 
 			/** Only run avatar image loading if either user or url property is defined */
-			if (!this.isUrlDefined && (!this.isUserDefined || this.isNoUser || this.iconClass)) {
+			if (!this.isUrlDefined && (!this.isUserDefined || this.isNoUser || this.iconClass || this.$scopedSlots.icon)) {
 				this.isAvatarLoaded = true
 				this.userDoesNotExist = true
 				return
@@ -760,11 +852,14 @@ export default {
 		 * @return {string}
 		 */
 		avatarUrlGenerator(user, size) {
-			let avatarUrl = getAvatarUrl(user, size, this.isGuest)
+			let avatarUrl = getAvatarUrl(user, {
+				size,
+				isDarkTheme: this.isDarkTheme,
+				isGuest: this.isGuest,
+			})
 
-			// eslint-disable-next-line camelcase
-			if (user === getCurrentUser()?.uid && typeof oc_userconfig !== 'undefined') {
-				avatarUrl += '?v=' + oc_userconfig.avatar.version
+			if (user === getCurrentUser()?.uid && typeof window.oc_userconfig !== 'undefined') {
+				avatarUrl += '?v=' + window.oc_userconfig.avatar.version
 			}
 
 			return avatarUrl
@@ -801,8 +896,8 @@ export default {
 				// re-get to avoid concurrent access
 				setUserHasAvatar(this.user, true)
 			}
-			img.onerror = () => {
-				console.debug('Invalid avatar url', url)
+			img.onerror = (error) => {
+				logger.debug('Invalid avatar url', { error, url })
 				// Avatar is invalid, reset
 				this.avatarUrlLoaded = null
 				this.avatarSrcSetLoaded = null
@@ -825,8 +920,8 @@ export default {
 .avatardiv {
 	position: relative;
 	display: inline-block;
-	width: var(--size);
-	height: var(--size);
+	width: var(--avatar-size);
+	height: var(--avatar-size);
 
 	&--unknown {
 		position: relative;
@@ -868,24 +963,24 @@ export default {
 		:deep() {
 			.button-vue,
 			.button-vue__icon {
-				height: var(--size);
-				min-height: var(--size);
-				width: var(--size) !important;
-				min-width: var(--size);
+				height: var(--avatar-size);
+				min-height: var(--avatar-size);
+				width: var(--avatar-size) !important;
+				min-width: var(--avatar-size);
 			}
 		}
 		& > :deep(.button-vue),
 		& > :deep(.action-item .button-vue) {
-			--button-radius: calc(var(--size) / 2);
+			--button-radius: calc(var(--avatar-size) / 2);
 		}
 	}
 
 	.avatardiv__initials-wrapper {
 		display: block;
-		height: var(--size);
-		width: var(--size);
+		height: var(--avatar-size);
+		width: var(--avatar-size);
 		background-color: var(--color-main-background);
-		border-radius: calc(var(--size) / 2);
+		border-radius: calc(var(--avatar-size) / 2);
 
 		.avatardiv__initials {
 			position: absolute;
@@ -907,29 +1002,36 @@ export default {
 	}
 
 	.material-design-icon {
-		width: var(--size);
-		height: var(--size);
+		width: var(--avatar-size);
+		height: var(--avatar-size);
 	}
 
 	.avatardiv__user-status {
+		// Size of the status icon to make it:
+		// - 💫 Orbital: the status icon's center is positioned on the avatar circle
+		// - ⏹️ Best-fit: the status icon is as large as possible without exceeding the avatar box
+		// See PR for math explanation: PR #6004
+		--avatar-status-size-orbital: calc(var(--avatar-size) * (1 - 1 / sqrt(2)));
+		// Limit the status icon size to minimum font size to keep it readable
+		// Ideally avatars with a smaller should not be used with the status icon at all
+		--avatar-status-size-min: var(--font-size-small);
+		--avatar-status-size: max(var(--avatar-status-size-orbital), var(--avatar-status-size-min));
 		box-sizing: border-box;
 		position: absolute;
-		inset-inline-end: -4px;
-		bottom: -4px;
-		min-height: 14px;
-		min-width: 14px;
-		max-height: 18px;
-		max-width: 18px;
-		height: 40%;
-		width: 40%;
+		inset-inline-end: 0;
+		inset-block-end: 0;
+		height: var(--avatar-status-size);
+		width: var(--avatar-status-size);
 		line-height: 1;
-		font-size: clamp(var(--font-size-small, 13px), 85%, var(--default-font-size));
-		border: 2px solid var(--color-main-background);
+		font-size: calc(var(--avatar-status-size) / 1.2);
 		background-color: var(--color-main-background);
 		background-repeat: no-repeat;
-		background-size: 16px;
+		background-size: var(--avatar-status-size);
 		background-position: center;
 		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 
 		.acli:hover & {
 			border-color: var(--color-background-hover);
@@ -954,7 +1056,7 @@ export default {
 
 .avatar-class-icon {
 	display: block;
-	border-radius: calc(var(--size) / 2);
+	border-radius: calc(var(--avatar-size) / 2);
 	background-color: var(--color-background-darker);
 	height: 100%;
 }

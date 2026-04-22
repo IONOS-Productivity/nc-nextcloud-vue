@@ -90,15 +90,17 @@ h4 {
 </docs>
 
 <template>
-	<span class="nc-datetime"
+	<span
+		class="nc-datetime"
+		dir="auto"
 		:data-timestamp="timestamp"
-		:title="formattedFullTime"
+		:title="title"
 		v-text="formattedTime" />
 </template>
 
 <script>
-import { computed } from 'vue'
-import { useFormatDateTime } from '../../composables/useFormatDateTime.ts'
+import { computed, toRef } from 'vue'
+import { useFormatRelativeTime, useFormatTime } from '../../composables/useFormatDateTime/index.ts'
 
 export default {
 	name: 'NcDateTime',
@@ -111,6 +113,7 @@ export default {
 			type: [Date, Number],
 			required: true,
 		},
+
 		/**
 		 * The format used for displaying, or if relative time is used the format used for the title (optional)
 		 *
@@ -120,6 +123,7 @@ export default {
 			type: Object,
 			default: () => ({ timeStyle: 'medium', dateStyle: 'short' }),
 		},
+
 		/**
 		 * Wether to display the timestamp as time from now (optional)
 		 *
@@ -133,6 +137,7 @@ export default {
 			default: 'long',
 			validator: (v) => v === false || ['long', 'short', 'narrow'].includes(v),
 		},
+
 		/**
 		 * Ignore seconds when displaying the relative time and just show `a few seconds ago`
 		 */
@@ -143,11 +148,22 @@ export default {
 	},
 
 	setup(props) {
-		const timestamp = computed(() => props.timestamp)
-		const { formattedTime, formattedFullTime } = useFormatDateTime(timestamp, props)
+		const timeOptions = computed(() => ({ format: props.format }))
+
+		const relativeTimeOptions = computed(() => ({
+			ignoreSeconds: props.ignoreSeconds,
+			relativeTime: props.relativeTime || 'long',
+			update: props.relativeTime !== false,
+		}))
+
+		const title = useFormatTime(toRef(props, 'timestamp'), timeOptions)
+
+		const relativeTime = useFormatRelativeTime(toRef(props, 'timestamp'), relativeTimeOptions)
+		const formattedTime = computed(() => props.relativeTime ? relativeTime.value : title.value)
+
 		return {
 			formattedTime,
-			formattedFullTime,
+			title,
 		}
 	},
 }

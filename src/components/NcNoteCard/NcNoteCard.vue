@@ -34,7 +34,7 @@ available in four versions:
 		<h4>Custom icon</h4>
 		<NcNoteCard type="warning" text="Custom icon usage">
 			<template #icon>
-				<Cog :size="20"/>
+				<IconCogOutline :size="20"/>
 			</template>
 		</NcNoteCard>
 
@@ -46,11 +46,11 @@ available in four versions:
 </template>
 
 <script>
-	import Cog from 'vue-material-design-icons/Cog.vue'
+	import IconCogOutline from 'vue-material-design-icons/CogOutline.vue'
 
 	export default {
 		components: {
-			Cog,
+			IconCogOutline,
 		},
 	}
 </script>
@@ -58,15 +58,20 @@ available in four versions:
 </docs>
 
 <template>
-	<div class="notecard"
-		:class="`notecard--${type}`"
+	<div
+		class="notecard"
+		:class="{
+			[`notecard--${type}`]: type,
+			'notecard--legacy': isLegacy32,
+		}"
 		:role="shouldShowAlert ? 'alert' : 'note'">
 		<!-- @slot Manually provide icon -->
 		<slot name="icon">
-			<component :is="icon"
+			<component
+				:is="icon"
 				class="notecard__icon"
-				:class="{'notecard__icon--heading': heading}"
-				:fill-color="color"
+				:class="{ 'notecard__icon--heading': heading }"
+				fill-color="var(--note-theme)"
 				:size="20" />
 		</slot>
 		<div>
@@ -84,10 +89,11 @@ available in four versions:
 </template>
 
 <script>
-import CheckboxMarkedCircle from 'vue-material-design-icons/CheckboxMarkedCircle.vue'
-import AlertDecagram from 'vue-material-design-icons/AlertDecagram.vue'
 import Alert from 'vue-material-design-icons/Alert.vue'
+import AlertDecagram from 'vue-material-design-icons/AlertDecagram.vue'
+import CheckboxMarkedCircle from 'vue-material-design-icons/CheckboxMarkedCircle.vue'
 import Information from 'vue-material-design-icons/Information.vue'
+import { isLegacy32 } from '../../utils/legacy.ts'
 
 export default {
 	name: 'NcNoteCard',
@@ -99,8 +105,9 @@ export default {
 		type: {
 			type: String,
 			default: 'warning',
-			validator: type => ['success', 'info', 'warning', 'error'].includes(type),
+			validator: (type) => ['success', 'info', 'warning', 'error'].includes(type),
 		},
+
 		/**
 		 * Enforce the `alert` role on the note card.
 		 *
@@ -111,6 +118,7 @@ export default {
 			type: Boolean,
 			default: false,
 		},
+
 		/**
 		 * Optional text to show as a heading of the note card
 		 */
@@ -118,6 +126,7 @@ export default {
 			type: String,
 			default: '',
 		},
+
 		/**
 		 * The message text of the note card
 		 */
@@ -126,36 +135,30 @@ export default {
 			default: '',
 		},
 	},
+
+	setup() {
+		return {
+			isLegacy32,
+		}
+	},
+
 	computed: {
 		shouldShowAlert() {
 			return this.showAlert || this.type === 'error'
 		},
+
 		icon() {
 			switch (this.type) {
-			case 'error':
-				return AlertDecagram
-			case 'success':
-				return CheckboxMarkedCircle
-			case 'info':
-				return Information
-			case 'warning':
-				return Alert
-			default:
-				return Alert
-			}
-		},
-		color() {
-			switch (this.type) {
-			case 'error':
-				return 'var(--color-error)'
-			case 'success':
-				return 'var(--color-success)'
-			case 'info':
-				return 'var(--color-info)'
-			case 'warning':
-				return 'var(--color-warning)'
-			default:
-				return 'var(--color-warning)'
+				case 'error':
+					return AlertDecagram
+				case 'success':
+					return CheckboxMarkedCircle
+				case 'info':
+					return Information
+				case 'warning':
+					return Alert
+				default:
+					return Alert
 			}
 		},
 	},
@@ -190,23 +193,40 @@ export default {
 	}
 
 	&--success {
-		--note-background: rgba(var(--color-success-rgb), 0.1);
-		--note-theme: var(--color-success);
+		--note-background: var(--color-success);
+		--note-theme: var(--color-success-text, var(--color-success));
 	}
 
 	&--info {
-		--note-background: rgba(var(--color-info-rgb), 0.1);
-		--note-theme: var(--color-info);
+		--note-background: var(--color-info);
+		--note-theme: var(--color-info-text, var(--color-info));
 	}
 
 	&--error {
-		--note-background: rgba(var(--color-error-rgb), 0.1);
-		--note-theme: var(--color-error);
+		--note-background: var(--color-error);
+		--note-theme: var(--color-error-text, var(--color-error));
 	}
 
 	&--warning {
-		--note-background: rgba(var(--color-warning-rgb), 0.1);
-		--note-theme: var(--color-warning);
+		--note-background: var(--color-warning);
+		--note-theme: var(--color-warning-text, var(--color-warning));
+	}
+
+	&--legacy {
+		&.notecard {
+			&--error {
+				--note-background: rgba(var(--color-error-rgb), 0.1);
+			}
+			&--info {
+				--note-background: rgba(var(--color-info-rgb), 0.1);
+			}
+			&--success {
+				--note-background: rgba(var(--color-success-rgb), 0.1);
+			}
+			&--warning {
+				--note-background: rgba(var(--color-warning-rgb), 0.1);
+			}
+		}
 	}
 }
 </style>

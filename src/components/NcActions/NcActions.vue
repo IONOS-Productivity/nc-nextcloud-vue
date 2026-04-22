@@ -949,16 +949,13 @@ export default {
 </docs>
 
 <script>
+import Vue, { computed } from 'vue'
+import IconDotsHorizontal from 'vue-material-design-icons/DotsHorizontal.vue'
+import { useTrapStackControl } from '../../composables/useTrapStackControl.ts'
+import { t } from '../../l10n.js'
+import GenRandomId from '../../utils/GenRandomId.js'
 import NcButton from '../NcButton/index.js'
 import NcPopover from '../NcPopover/index.js'
-import GenRandomId from '../../utils/GenRandomId.js'
-
-import { t } from '../../l10n.js'
-import { useTrapStackControl } from '../../composables/useTrapStackControl.ts'
-import { useElementBounding, useWindowSize } from '@vueuse/core'
-import Vue, { ref, computed, toRef } from 'vue'
-
-import IconDotsHorizontal from 'vue-material-design-icons/DotsHorizontal.vue'
 
 const focusableSelector = '.focusable'
 
@@ -987,6 +984,7 @@ export default {
 			 * - Popover with plain text or text inputs (has no specific role)
 			 * Depending on the usage (used items), the menu and its items should have different roles for a11y.
 			 * Provide the role for NcAction* components in the NcActions content.
+			 *
 			 * @type {import('vue').ComputedRef<boolean>}
 			 */
 			'NcActions:isSemanticMenu': computed(() => this.actionsMenuSemanticType === 'menu'),
@@ -1078,6 +1076,7 @@ export default {
 		 *
 		 * Accepted values: primary, secondary, tertiary, tertiary-no-background, tertiary-on-primary, error, warning, success. If left empty,
 		 * the default button style will be applied.
+		 *
 		 * @deprecated use `variant` instead - will be removed with v9
 		 */
 		type: {
@@ -1085,6 +1084,7 @@ export default {
 			validator(value) {
 				return ['primary', 'secondary', 'tertiary', 'tertiary-no-background', 'tertiary-on-primary', 'error', 'warning', 'success'].includes(value)
 			},
+
 			default: null,
 		},
 
@@ -1117,6 +1117,7 @@ export default {
 		 */
 		ariaHidden: {
 			type: Boolean,
+			// eslint-disable-next-line vue/no-boolean-default
 			default: null,
 		},
 
@@ -1140,7 +1141,7 @@ export default {
 		 * Selector for the actions' popover container
 		 */
 		container: {
-			type: [String, Object, Element, Boolean],
+			type: [Boolean, String, Object, Element],
 			default: 'body',
 		},
 
@@ -1164,7 +1165,6 @@ export default {
 		/**
 		 * Specifies the button variant used for trigger and single actions buttons.
 		 *
-		 * Accepted values: primary, secondary, tertiary, tertiary-no-background, tertiary-on-primary, error, warning, success.
 		 * If left empty, the default button style will be applied.
 		 *
 		 * @since 8.24.0
@@ -1174,7 +1174,21 @@ export default {
 			validator(value) {
 				return ['primary', 'secondary', 'tertiary', 'tertiary-no-background', 'tertiary-on-primary', 'error', 'warning', 'success'].includes(value)
 			},
+
 			default: null,
+		},
+
+		/**
+		 * Specify the size used for trigger and single actions buttons.
+		 *
+		 * If left empty, the default button size will be applied.
+		 */
+		size: {
+			type: String,
+			default: 'normal',
+			validator(value) {
+				return ['small', 'normal', 'large'].includes(value)
+			},
 		},
 	},
 
@@ -1190,36 +1204,11 @@ export default {
 		'update:open',
 	],
 
-	setup(props) {
+	setup() {
 		const randomId = `menu-${GenRandomId()}`
 		const triggerRandomId = `trigger-${randomId}`
 
-		const triggerButton = ref()
-
-		const { top, bottom } = useElementBounding(triggerButton)
-		const { top: boundaryTop, bottom: boundaryBottom } = useElementBounding(toRef(props, 'boundariesElement'))
-		const { height: windowHeight } = useWindowSize()
-		const maxMenuHeight = computed(() => Math.max(
-			// Either expand to the top
-			Math.min(
-				// max height is the top position of the trigger minus the header height minus the wedge and the padding
-				top.value - 84,
-				// and also limited to the space in the boundary
-				top.value - boundaryTop.value,
-			),
-			// or expand to the bottom
-			Math.min(
-				// the max height is the window height minus current position of the trigger minus the wedge and padding
-				windowHeight.value - bottom.value - 34,
-				// and limit to the available space in the boundary
-				boundaryBottom.value - bottom.value,
-			),
-		))
-
 		return {
-			triggerButton,
-			maxMenuHeight,
-
 			randomId,
 			triggerRandomId,
 		}
@@ -1280,6 +1269,7 @@ export default {
 					triggerA11yAttr: {
 						'aria-controls': this.opened ? this.randomId : null,
 					},
+
 					popoverContainerA11yAttrs: {},
 					popoverUlA11yAttrs: {
 						'aria-labelledby': this.triggerRandomId,
@@ -1287,6 +1277,7 @@ export default {
 						role: 'menu',
 					},
 				},
+
 				expanded: {
 					popupRole: undefined,
 					withArrowNavigation: false,
@@ -1296,6 +1287,7 @@ export default {
 					popoverContainerA11yAttrs: {},
 					popoverUlA11yAttrs: {},
 				},
+
 				dialog: {
 					popupRole: 'dialog',
 					withArrowNavigation: false,
@@ -1304,6 +1296,7 @@ export default {
 					triggerA11yAttr: {
 						'aria-controls': this.opened ? this.randomId : null,
 					},
+
 					popoverContainerA11yAttrs: {
 						id: this.randomId,
 						role: 'dialog',
@@ -1311,8 +1304,10 @@ export default {
 						'aria-labelledby': this.triggerRandomId,
 						'aria-modal': 'true',
 					},
+
 					popoverUlA11yAttrs: {},
 				},
+
 				tooltip: {
 					popupRole: undefined,
 					withArrowNavigation: false,
@@ -1322,6 +1317,7 @@ export default {
 					popoverContainerA11yAttrs: {},
 					popoverUlA11yAttrs: {},
 				},
+
 				// Due to Vue limitations, we sometimes cannot determine the true type
 				// As a fallback use both arrow navigation and focus trap
 				unknown: {
@@ -1396,18 +1392,19 @@ export default {
 
 		/**
 		 * Check whether a icon prop value is an URL or not
+		 *
 		 * @param {string} url The icon prop value
 		 */
 		isIconUrl(url) {
 			try {
 				return !!(new URL(url, url.startsWith('/') ? window.location.origin : undefined))
-			} catch (error) {
+			} catch {
 				return false
 			}
 		},
 
 		// MENU STATE MANAGEMENT
-		openMenu(e) {
+		openMenu() {
 			if (this.opened) {
 				return
 			}
@@ -1426,6 +1423,7 @@ export default {
 			 */
 			this.$emit('open')
 		},
+
 		async closeMenu(returnFocus = true) {
 			if (!this.opened) {
 				return
@@ -1449,6 +1447,7 @@ export default {
 
 			/**
 			 * Event emitted when the popover menu is *being* closed.
+			 *
 			 * @deprecated use `update:open` instead. This is always emitted the same time as `('update:open', false)`
 			 */
 			this.$emit('close')
@@ -1468,7 +1467,7 @@ export default {
 			 *
 			 * This event is emitted after `update:open` was emitted and the closing transition finished.
 			 */
-			 this.$emit('closed')
+			this.$emit('closed')
 		},
 
 		/**
@@ -1495,9 +1494,10 @@ export default {
 			// Get the inner v-popper element that defines the popover height (from floating-vue)
 			const inner = this.$refs.menu.closest('.v-popper__inner')
 			const height = this.$refs.menu.clientHeight
+			const maxMenuHeight = this.getMaxMenuHeight()
 
 			// If the popover height is limited by the max-height (scrollbars shown) limit the height to half of the last element
-			if (height > this.maxMenuHeight) {
+			if (height > maxMenuHeight) {
 				// sum of action heights
 				let currentHeight = 0
 				// last action height
@@ -1505,7 +1505,7 @@ export default {
 				for (const action of this.$refs.menuList.children) {
 					// If the max height would be overflown by half of the current element,
 					// then we limit the height to the half of the previous element
-					if ((currentHeight + action.clientHeight / 2) > this.maxMenuHeight) {
+					if ((currentHeight + action.clientHeight / 2) > maxMenuHeight) {
 						inner.style.height = `${currentHeight - actionHeight / 2}px`
 						break
 					}
@@ -1518,6 +1518,28 @@ export default {
 			}
 		},
 
+		getMaxMenuHeight() {
+			const { top, bottom } = this.$refs.triggerButton?.$el.getBoundingClientRect() ?? { top: 0, bottom: 0 }
+			const { top: boundaryTop, bottom: boundaryBottom } = this.boundariesElement?.getBoundingClientRect() ?? { top: 0, bottom: window.innerHeight }
+
+			return Math.max(
+				// Either expand to the top
+				Math.min(
+					// max height is the top position of the trigger minus the header height minus the wedge and the padding
+					top - 84,
+					// and also limited to the space in the boundary
+					top - boundaryTop,
+				),
+				// or expand to the bottom
+				Math.min(
+					// the max height is the window height minus current position of the trigger minus the wedge and padding
+					window.innerHeight - bottom - 34,
+					// and limit to the available space in the boundary
+					boundaryBottom - bottom,
+				),
+			)
+		},
+
 		// MENU KEYS & FOCUS MANAGEMENT
 		/**
 		 * @return {HTMLElement|null}
@@ -1525,12 +1547,14 @@ export default {
 		getCurrentActiveMenuItemElement() {
 			return this.$refs.menu.querySelector('li.active')
 		},
+
 		/**
-		 * @return {NodeListOf<HTMLElement>}
+		 * @return {NodeList<HTMLElement>}
 		 */
 		getFocusableMenuItemElements() {
 			return this.$refs.menu.querySelectorAll(focusableSelector)
 		},
+
 		/**
 		 * Dispatches the keydown listener to different handlers
 		 *
@@ -1620,6 +1644,7 @@ export default {
 				currentActiveElement.classList.remove('active')
 			}
 		},
+
 		focusAction() {
 			// TODO: have a global disabled state for non input elements
 			const focusElement = this.getFocusableMenuItemElements()[this.focusIndex]
@@ -1632,6 +1657,7 @@ export default {
 				}
 			}
 		},
+
 		focusPreviousAction(event) {
 			if (this.opened) {
 				if (this.focusIndex === 0) {
@@ -1643,6 +1669,7 @@ export default {
 				this.focusAction()
 			}
 		},
+
 		focusNextAction(event) {
 			if (this.opened) {
 				const indexLength = this.getFocusableMenuItemElements().length - 1
@@ -1655,6 +1682,7 @@ export default {
 				this.focusAction()
 			}
 		},
+
 		focusFirstAction(event) {
 			if (this.opened) {
 				this.preventIfEvent(event)
@@ -1668,6 +1696,7 @@ export default {
 				this.focusAction()
 			}
 		},
+
 		focusLastAction(event) {
 			if (this.opened) {
 				this.preventIfEvent(event)
@@ -1675,15 +1704,18 @@ export default {
 				this.focusAction()
 			}
 		},
+
 		preventIfEvent(event) {
 			if (event) {
 				event.preventDefault()
 				event.stopPropagation()
 			}
 		},
+
 		onFocus(event) {
 			this.$emit('focus', event)
 		},
+
 		onBlur(event) {
 			this.$emit('blur', event)
 
@@ -1697,6 +1729,7 @@ export default {
 				}
 			}
 		},
+
 		onClick(event) {
 			/**
 			 * Event emitted when the menu toggle button is clicked.
@@ -1722,7 +1755,7 @@ export default {
 		 * This also ensure that we don't get 'text' elements, which would
 		 * become problematic later on.
 		 */
-		const actions = (this.$slots.default || []).filter(action => this.getActionName(action))
+		const actions = (this.$slots.default || []).filter((action) => this.getActionName(action))
 
 		// Check that we have at least one action
 		if (actions.length === 0) {
@@ -1748,7 +1781,7 @@ export default {
 		/**
 		 * @type {import('vue').VNode[]}
 		 */
-		const menuActions = actions.filter(action => !inlineActions.includes(action))
+		const menuActions = actions.filter((action) => !inlineActions.includes(action))
 
 		/**
 		 * Determine what kind of menu we have.
@@ -1761,9 +1794,9 @@ export default {
 			const menuItemsActions = ['NcActionButton', 'NcActionButtonGroup', 'NcActionCheckbox', 'NcActionRadio']
 			const linkActions = ['NcActionLink', 'NcActionRouter']
 
-			const hasTextInputAction = menuActions.some(action => textInputActions.includes(this.getActionName(action)))
-			const hasMenuItemAction = menuActions.some(action => menuItemsActions.includes(this.getActionName(action)))
-			const hasLinkAction = menuActions.some(action => linkActions.includes(this.getActionName(action)))
+			const hasTextInputAction = menuActions.some((action) => textInputActions.includes(this.getActionName(action)))
+			const hasMenuItemAction = menuActions.some((action) => menuItemsActions.includes(this.getActionName(action)))
+			const hasLinkAction = menuActions.some((action) => linkActions.includes(this.getActionName(action)))
 
 			if (hasTextInputAction) {
 				this.actionsMenuSemanticType = 'dialog'
@@ -1822,7 +1855,8 @@ export default {
 			delete propsToForward.modelValue
 			delete propsToForward.type
 
-			return h('NcButton',
+			return h(
+				'NcButton',
 				{
 					class: [
 						'action-item action-item--single',
@@ -1839,6 +1873,7 @@ export default {
 						...propsToForward,
 						disabled: this.disabled || action?.componentOptions?.propsData?.disabled,
 						pressed: action?.componentOptions?.propsData?.modelValue,
+						size: this.size,
 						type: nativeType,
 						// If it has a menuName, we use a secondary button
 						variant: (this.type ?? this.variant) || (buttonText ? 'secondary' : 'tertiary'),
@@ -1877,12 +1912,13 @@ export default {
 				this.defaultIcon
 					? h('span', { class: ['icon', this.defaultIcon] })
 					: h(IconDotsHorizontal, {
-						props: {
-							size: 20,
-						},
-					})
+							props: {
+								size: 20,
+							},
+						})
 			)
-			return h('NcPopover',
+			return h(
+				'NcPopover',
 				{
 					ref: 'popover',
 					props: {
@@ -1894,7 +1930,7 @@ export default {
 						container: this.container,
 						popoverBaseClass: 'action-item__popper',
 						popupRole: this.config.popupRole,
-						setReturnFocus: this.config.withFocusTrap ? this.$refs.triggerButton?.$el : null,
+						noAutoReturnFocus: !this.withFocusTrap,
 						focusTrap: this.config.withFocusTrap,
 					},
 					// For some reason the popover component
@@ -1920,6 +1956,7 @@ export default {
 					h('NcButton', {
 						class: 'action-item__menutoggle',
 						props: {
+							size: this.size,
 							variant: this.triggerButtonVariant,
 							disabled: this.disabled,
 						},
@@ -1992,7 +2029,8 @@ export default {
 		 * If we some inline actions to render, render them, then the menu
 		 */
 		if (inlineActions.length > 0 && this.inline > 0) {
-			return h('div',
+			return h(
+				'div',
 				{
 					class: [
 						'action-items',
@@ -2004,26 +2042,30 @@ export default {
 					...inlineActions.map(renderInlineAction),
 					// render the rest within the popover menu
 					menuActions.length > 0
-						? h('div',
-							{
-								class: [
-									'action-item',
-									{
-										'action-item--open': this.opened,
-									},
+						? h(
+								'div',
+								{
+									class: [
+										'action-item',
+										{
+											'action-item--open': this.opened,
+										},
+									],
+								},
+								[
+									renderActionsPopover(menuActions),
 								],
-							},
-							[
-								renderActionsPopover(menuActions),
-							])
+							)
 						: null,
-				])
+				],
+			)
 		}
 
 		/**
 		 * Otherwise, we render the actions in a popover
 		 */
-		return h('div',
+		return h(
+			'div',
 			{
 				class: [
 					'action-item action-item--default-popover',
@@ -2093,7 +2135,7 @@ export default {
 <style lang="scss">
 // We overwrote the popover base class, so we can style
 // the popover__inner for actions only.
-.v-popper--theme-dropdown.v-popper__popper.action-item__popper .v-popper__wrapper {
+.v-popper--theme-nc-popover-8.v-popper__popper.action-item__popper .v-popper__wrapper {
 	border-radius: var(--border-radius-large);
 
 	.v-popper__inner {

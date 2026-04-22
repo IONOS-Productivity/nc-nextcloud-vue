@@ -20,6 +20,13 @@ Note: All attributes on the element are passed to the inner input element - exce
 		<NcCheckboxRadioSwitch v-model="sharingEnabled" :disabled="true">Enable sharing (disabled)</NcCheckboxRadioSwitch>
 		<NcCheckboxRadioSwitch v-model="sharingEnabled">Enable sharing (v-model)</NcCheckboxRadioSwitch>
 		<NcCheckboxRadioSwitch :model-value="sharingEnabled" :loading="loading" @update:modelValue="onToggle">Enable sharing (with request loading)</NcCheckboxRadioSwitch>
+		<NcCheckboxRadioSwitch v-model="sharingEnabled">
+			Enable sharing. This can contain a long multiline text, that will be wrapped in a second row. It is generally not advised to have such long text inside of an element
+		</NcCheckboxRadioSwitch>
+
+		<NcCheckboxRadioSwitch v-model="sharingEnabled" description="The description">
+			Enable sharing with description
+		</NcCheckboxRadioSwitch>
 		<br>
 		sharingEnabled: {{ sharingEnabled }}
 	</div>
@@ -46,6 +53,29 @@ export default {
 </script>
 ```
 
+### Standard checkbox set
+```vue
+<template>
+	<div>
+		<NcCheckboxRadioSwitch v-model="sharingPermission" value="r" name="sharing_permission" disabled>Permission read</NcCheckboxRadioSwitch>
+		<NcCheckboxRadioSwitch v-model="sharingPermission" value="w" name="sharing_permission">Permission write</NcCheckboxRadioSwitch>
+		<NcCheckboxRadioSwitch v-model="sharingPermission" value="d" name="sharing_permission">Permission delete</NcCheckboxRadioSwitch>
+		<NcCheckboxRadioSwitch v-model="sharingPermission" value="x" name="sharing_permission">Permission execute</NcCheckboxRadioSwitch>
+		<br>
+		sharingPermission: {{ sharingPermission }}
+	</div>
+</template>
+<script>
+export default {
+	data() {
+		return {
+			sharingPermission: ['r', 'd'],
+		}
+	}
+}
+</script>
+```
+
 ### Standard radio set
 ```vue
 <template>
@@ -53,6 +83,9 @@ export default {
 		<NcCheckboxRadioSwitch v-model="sharingPermission" value="r" name="sharing_permission_radio" type="radio">Default permission read</NcCheckboxRadioSwitch>
 		<NcCheckboxRadioSwitch v-model="sharingPermission" value="rw" name="sharing_permission_radio" type="radio">Default permission read+write</NcCheckboxRadioSwitch>
 		<NcCheckboxRadioSwitch v-model="sharingPermission" value="rwx" name="sharing_permission_radio" type="radio">Default permission read+write+execute</NcCheckboxRadioSwitch>
+		<NcCheckboxRadioSwitch v-model="sharingPermission" value="rws" name="sharing_permission_radio" type="radio">
+			Default permission read+write+share. This can contain a long multiline text, that will be wrapped in a second row. It is generally not advised to have such long text inside of an element
+		</NcCheckboxRadioSwitch>
 		<br>
 		sharingPermission: {{ sharingPermission }}
 	</div>
@@ -68,7 +101,47 @@ export default {
 </script>
 ```
 
-### Standard radio set with alternative button style
+### Standard switch
+```vue
+<template>
+	<div>
+		<NcCheckboxRadioSwitch v-model="sharingEnabled" type="switch">Enable sharing</NcCheckboxRadioSwitch>
+		<NcCheckboxRadioSwitch v-model="sharingEnabled" type="switch">Enable sharing (v-model)</NcCheckboxRadioSwitch>
+		<NcCheckboxRadioSwitch v-model="sharingEnabled" type="switch" disabled>Enable sharing (disabled)</NcCheckboxRadioSwitch>
+		<NcCheckboxRadioSwitch v-model="sharingEnabled" type="switch">
+			Enable sharing. This can contain a long multiline text, that will be wrapped in a second row. It is generally not advised to have such long text inside of an element
+		</NcCheckboxRadioSwitch>
+		<NcCheckboxRadioSwitch v-model="sharingEnabled" type="switch" description="Instead you can use a description as a prop which can also be a long multiline text, that will be wrapped in a second row.">
+			Enable sharing.
+		</NcCheckboxRadioSwitch>
+
+		<NcCheckboxRadioSwitch v-model="sharingEnabled" type="switch">
+			Enable sharing.
+			<template #description>
+				Or you can use a description as slot which can also be a <strong>long multiline text</strong>, that will be wrapped in a second row.
+			</template>
+		</NcCheckboxRadioSwitch>
+		<br>
+		sharingEnabled: {{ sharingEnabled }}
+	</div>
+</template>
+<script>
+export default {
+	data() {
+		return {
+			sharingEnabled: true,
+		}
+	},
+}
+</script>
+```
+
+### Deprecated button variants
+⚠️ Warning the button variant is deprecated ⚠️
+The button variant does not provide proper grouping,
+to overcome this and other limitations we now provide `NcRadioGroup` instead.
+
+#### Standard radio set with alternative button style
 ```vue
 <template>
 	<div>
@@ -128,7 +201,7 @@ export default {
 </script>
 ```
 
-### Radio set with button style and icons
+#### Radio set with button style and icons
 ```vue
 <template>
 	<div>
@@ -197,60 +270,16 @@ export default {
 }
 </script>
 ```
-
-### Standard checkbox set
-```vue
-<template>
-	<div>
-		<NcCheckboxRadioSwitch :disabled="true" v-model="sharingPermission" value="r" name="sharing_permission">Permission read</NcCheckboxRadioSwitch>
-		<NcCheckboxRadioSwitch v-model="sharingPermission" value="w" name="sharing_permission">Permission write</NcCheckboxRadioSwitch>
-		<NcCheckboxRadioSwitch v-model="sharingPermission" value="d" name="sharing_permission">Permission delete</NcCheckboxRadioSwitch>
-		<NcCheckboxRadioSwitch v-model="sharingPermission" value="x" name="sharing_permission">Permission execute</NcCheckboxRadioSwitch>
-		<br>
-		sharingPermission: {{ sharingPermission }}
-	</div>
-</template>
-<script>
-export default {
-	data() {
-		return {
-			sharingPermission: ['r', 'd'],
-		}
-	}
-}
-</script>
-```
-
-### Standard switch
-```vue
-<template>
-	<div>
-		<NcCheckboxRadioSwitch v-model="sharingEnabled" type="switch">Enable sharing</NcCheckboxRadioSwitch>
-		<NcCheckboxRadioSwitch v-model="sharingEnabled" type="switch">Enable sharing (v-model)</NcCheckboxRadioSwitch>
-		<NcCheckboxRadioSwitch v-model="sharingEnabled" type="switch" :disabled="true">Enable sharing (disabled)</NcCheckboxRadioSwitch>
-		<br>
-		sharingEnabled: {{ sharingEnabled }}
-	</div>
-</template>
-<script>
-export default {
-	data() {
-		return {
-			sharingEnabled: true,
-		}
-	},
-}
-</script>
-```
-
 </docs>
 
 <template>
-	<component :is="computedWrapperElement"
+	<component
+		:is="computedWrapperElement"
 		:id="wrapperId"
 		:aria-label="isButtonType && ariaLabel ? ariaLabel : undefined"
+		class="checkbox-radio-switch"
 		:class="{
-			['checkbox-radio-switch-' + type]: type,
+			['checkbox-radio-switch-' + internalType]: internalType,
 			'checkbox-radio-switch--checked': isChecked,
 			'checkbox-radio-switch--disabled': disabled,
 			'checkbox-radio-switch--indeterminate': hasIndeterminate ? indeterminate : false,
@@ -259,14 +288,14 @@ export default {
 			'checkbox-radio-switch--button-variant-h-grouped': buttonVariant && buttonVariantGrouped === 'horizontal',
 			'button-vue': isButtonType,
 		}"
-		class="checkbox-radio-switch"
-		:style="cssVars"
 		:type="isButtonType ? 'button' : null"
 		v-bind="isButtonType ? $attrs : dataAttrs"
 		v-on="isButtonType ? listeners : null">
-		<input v-if="!isButtonType"
+		<input
+			v-if="!isButtonType"
 			:id="id"
-			:aria-labelledby="!isButtonType && !ariaLabel ? `${id}-label` : null"
+			:aria-labelledby="!isButtonType && !ariaLabel ? labelId : null"
+			:aria-describedby="!isButtonType && (description || $slots.description) ? descriptionId : nonDataAttrs['aria-describedby']"
 			:aria-label="ariaLabel || undefined"
 			class="checkbox-radio-switch__input"
 			:disabled="disabled"
@@ -278,20 +307,29 @@ export default {
 			:name="name"
 			v-bind="nonDataAttrs"
 			v-on="listeners">
-		<NcCheckboxContent :id="!isButtonType ? `${id}-label` : undefined"
+		<NcCheckboxContent
+			:id="!isButtonType ? `${id}-label` : undefined"
 			class="checkbox-radio-switch__content"
 			icon-class="checkbox-radio-switch__icon"
 			text-class="checkbox-radio-switch__text"
-			:type="type"
+			:type="internalType"
 			:indeterminate="hasIndeterminate ? indeterminate : false"
 			:button-variant="buttonVariant"
 			:is-checked="isChecked"
 			:loading="loading"
-			:size="size"
+			:label-id="labelId"
+			:description-id="descriptionId"
+			:icon-size="iconSize"
 			@click.native="onToggle">
 			<template #icon>
 				<!-- @slot The checkbox/radio icon, you can use it for adding an icon to the button variant -->
 				<slot name="icon" />
+			</template>
+			<template v-if="$slots.description || description" #description>
+				<!-- @slot The checkbox/radio/switch description, you can use it for adding a more complex description element as opposed to the description prop -->
+				<slot name="description">
+					{{ description }}
+				</slot>
 			</template>
 
 			<!-- @slot The checkbox/radio label -->
@@ -301,10 +339,12 @@ export default {
 </template>
 
 <script>
-import { n, t } from '../../l10n.js'
-import GenRandomId from '../../utils/GenRandomId.js'
+import { computed, onMounted } from 'vue'
 import NcCheckboxContent, { TYPE_BUTTON, TYPE_CHECKBOX, TYPE_RADIO, TYPE_SWITCH } from './NcCheckboxContent.vue'
 import { useModelMigration } from '../../composables/useModelMigration.ts'
+import { n, t } from '../../l10n.js'
+import GenRandomId from '../../utils/GenRandomId.js'
+import { useInsideRadioGroup } from '../NcRadioGroup/useNcRadioGroup.ts'
 
 export default {
 	name: 'NcCheckboxRadioSwitch',
@@ -328,7 +368,7 @@ export default {
 		id: {
 			type: String,
 			default: () => 'checkbox-radio-switch-' + GenRandomId(),
-			validator: id => id.trim() !== '',
+			validator: (id) => id.trim() !== '',
 		},
 
 		/**
@@ -368,7 +408,7 @@ export default {
 		type: {
 			type: String,
 			default: 'checkbox',
-			validator: type => [
+			validator: (type) => [
 				TYPE_CHECKBOX,
 				TYPE_RADIO,
 				TYPE_SWITCH,
@@ -378,6 +418,8 @@ export default {
 
 		/**
 		 * Toggle the alternative button style
+		 *
+		 * @deprecated - Use `NcRadioGroup` instead
 		 */
 		buttonVariant: {
 			type: Boolean,
@@ -389,15 +431,17 @@ export default {
 		 * If so they will be grouped horizontally or vertically
 		 *
 		 * @type {'no'|'horizontal'|'vertical'}
+		 * @deprecated - Use `NcRadioGroup` instead
 		 */
 		buttonVariantGrouped: {
 			type: String,
 			default: 'no',
-			validator: v => ['no', 'vertical', 'horizontal'].includes(v),
+			validator: (v) => ['no', 'vertical', 'horizontal'].includes(v),
 		},
 
 		/**
 		 * Removed in v9 - use `modelValue` (`v-model`) instead
+		 *
 		 * @deprecated
 		 */
 		checked: {
@@ -464,11 +508,22 @@ export default {
 			type: String,
 			default: null,
 		},
+
+		/**
+		 * Description
+		 *
+		 * This is unsupported when using button has type
+		 */
+		description: {
+			type: String,
+			default: null,
+		},
 	},
 
 	emits: [
 		/**
 		 * Removed in v9 - use `update:modelValue` (`v-model`) instead
+		 *
 		 * @deprecated
 		 */
 		'update:checked',
@@ -477,10 +532,37 @@ export default {
 		'update:model-value',
 	],
 
-	setup() {
+	setup(props) {
+		const radioGroup = useInsideRadioGroup()
+		const internalType = computed(() => radioGroup?.value ? TYPE_RADIO : props.type)
+		onMounted(() => radioGroup?.value.register(false))
+
 		const model = useModelMigration('checked', 'update:checked')
+		/**
+		 * A wrapper around the model value, if inside a radio group use the injected value otherwise use the prop.
+		 */
+		const internalModelValue = computed({
+			get() {
+				if (radioGroup?.value) {
+					return radioGroup.value.modelValue
+				}
+				return model.value
+			},
+			set(value) {
+				if (radioGroup?.value) {
+					radioGroup.value.onUpdate(value)
+				} else {
+					model.value = value
+				}
+			},
+		})
+
 		return {
-			model,
+			internalType,
+			internalModelValue,
+
+			labelId: GenRandomId(),
+			descriptionId: GenRandomId(),
 		}
 	},
 
@@ -498,7 +580,7 @@ export default {
 		},
 
 		isButtonType() {
-			return this.type === TYPE_BUTTON
+			return this.internalType === TYPE_BUTTON
 		},
 
 		computedWrapperElement() {
@@ -522,27 +604,20 @@ export default {
 			}
 		},
 
-		/**
-		 * Icon size
-		 *
-		 * @return {number}
-		 */
-		size() {
-			return this.type === TYPE_SWITCH
+		iconSize() {
+			return this.internalType === TYPE_SWITCH
 				? 36
 				: 24
 		},
 
-		/**
-		 * Css local variables for this component
-		 *
-		 * @return {object}
-		 */
-		cssVars() {
-			return {
-				'--icon-size': this.size + 'px',
-				'--icon-height': (this.type === TYPE_SWITCH ? 16 : this.size) + 'px',
-			}
+		cssIconSize() {
+			return this.iconSize + 'px'
+		},
+
+		cssIconHeight() {
+			return this.internalType === TYPE_SWITCH
+				? '16px'
+				: this.cssIconSize
 		},
 
 		/**
@@ -557,8 +632,8 @@ export default {
 				TYPE_RADIO,
 				TYPE_BUTTON,
 			]
-			if (nativeTypes.includes(this.type)) {
-				return this.type
+			if (nativeTypes.includes(this.internalType)) {
+				return this.internalType
 			}
 			return TYPE_CHECKBOX
 		},
@@ -572,12 +647,12 @@ export default {
 		 */
 		isChecked() {
 			if (this.value !== null) {
-				if (Array.isArray(this.model)) {
-					return [...this.model].indexOf(this.value) > -1
+				if (Array.isArray(this.internalModelValue)) {
+					return [...this.internalModelValue].indexOf(this.value) > -1
 				}
-				return this.model === this.value
+				return this.internalModelValue === this.value
 			}
-			return this.model === true
+			return this.internalModelValue === true
 		},
 
 		hasIndeterminate() {
@@ -589,20 +664,20 @@ export default {
 	},
 
 	mounted() {
-		if (this.name && this.type === TYPE_CHECKBOX) {
-			if (!Array.isArray(this.model)) {
+		if (this.name && this.internalType === TYPE_CHECKBOX) {
+			if (!Array.isArray(this.internalModelValue)) {
 				throw new Error('When using groups of checkboxes, the updated value will be an array.')
 			}
 		}
 
 		// https://material.io/components/checkboxes#usage
-		if (this.name && this.type === TYPE_SWITCH) {
+		if (this.name && this.internalType === TYPE_SWITCH) {
 			throw new Error('Switches are not made to be used for data sets. Please use checkboxes instead.')
 		}
 
 		// https://material.io/components/checkboxes#usage
-		if (typeof this.model !== 'boolean' && this.type === TYPE_SWITCH) {
-			throw new Error('Switches can only be used with boolean as checked prop.')
+		if (typeof this.internalModelValue !== 'boolean' && this.internalType === TYPE_SWITCH) {
+			throw new Error('Switches can only be used with boolean as modelValue prop.')
 		}
 	},
 
@@ -616,32 +691,32 @@ export default {
 			}
 
 			// If this is a radio, there can only be one value
-			if (this.type === TYPE_RADIO) {
-				this.model = this.value
+			if (this.internalType === TYPE_RADIO) {
+				this.internalModelValue = this.value
 				return
 			}
 
 			// If this is a radio, there can only be one value
-			if (this.type === TYPE_SWITCH) {
-				this.model = !this.isChecked
+			if (this.internalType === TYPE_SWITCH) {
+				this.internalModelValue = !this.isChecked
 				return
 			}
 
 			// If the initial value was a boolean, let's keep it that way
-			if (typeof this.model === 'boolean') {
-				this.model = !this.model
+			if (typeof this.internalModelValue === 'boolean') {
+				this.internalModelValue = !this.internalModelValue
 				return
 			}
 
 			// Dispatch the checked values as an array if multiple, or single value otherwise
 			const values = this.getInputsSet()
-				.filter(input => input.checked)
-				.map(input => input.value)
+				.filter((input) => input.checked)
+				.map((input) => input.value)
 
 			if (values.includes(this.value)) {
-				this.model = values.filter((v) => v !== this.value)
+				this.internalModelValue = values.filter((v) => v !== this.value)
 			} else {
-				this.model = [...values, this.value]
+				this.internalModelValue = [...values, this.value]
 			}
 		},
 
@@ -659,14 +734,21 @@ export default {
 
 <style lang="scss" scoped>
 .checkbox-radio-switch {
+	--icon-size: v-bind('cssIconSize');
+	--icon-height: v-bind('cssIconHeight');
 	display: flex;
 	align-items: center;
 	color: var(--color-main-text);
 	background-color: transparent;
+	box-sizing: border-box;
 	font-size: var(--default-font-size);
 	line-height: var(--default-line-height);
 	padding: 0;
 	position: relative;
+
+	* {
+		box-sizing: border-box;
+	}
 
 	&__input {
 		position: absolute;

@@ -34,7 +34,7 @@ and `minlength`.
 			:show-trailing-button="text4 !== ''"
 			@trailing-button-click="clearText">
 			<template #icon>
-				<Lock :size="20" />
+				<IconLockOutline :size="20" />
 			</template>
 		</NcTextField>
 		<NcTextField v-model="text2"
@@ -73,7 +73,7 @@ and `minlength`.
 </template>
 <script>
 import Magnify from 'vue-material-design-icons/Magnify'
-import Lock from 'vue-material-design-icons/Lock'
+import IconLockOutline from 'vue-material-design-icons/LockOutline'
 import Close from 'vue-material-design-icons/Close'
 
 export default {
@@ -89,7 +89,7 @@ export default {
 
 	components: {
 		Magnify,
-		Lock,
+		IconLockOutline,
 		Close,
 	},
 
@@ -125,7 +125,8 @@ export default {
 </docs>
 
 <template>
-	<NcInputField v-bind="propsAndAttrsToForward"
+	<NcInputField
+		v-bind="propsAndAttrsToForward"
 		ref="inputField"
 		v-on="$listeners">
 		<template v-if="!!$scopedSlots.icon || !!$slots.default || !!$scopedSlots.default" #icon>
@@ -138,23 +139,18 @@ export default {
 
 		<!-- Trailing icon slot, except for search type input as the browser already adds a trailing close icon -->
 		<template v-if="type !== 'search'" #trailing-button-icon>
-			<Close v-if="trailingButtonIcon === 'close'" :size="20" />
-			<ArrowRight v-else-if="trailingButtonIcon === 'arrowRight'" :size="20" />
-			<Undo v-else-if="trailingButtonIcon === 'undo'" :size="20" />
+			<NcIconSvgWrapper v-if="isArrow" directional :path="mdiArrowRight" />
+			<NcIconSvgWrapper v-else :path="trailingButtonIcon === 'undo' ? mdiUndo : mdiClose" />
 		</template>
 	</NcInputField>
 </template>
 
 <script>
-
+import { mdiArrowRight, mdiClose, mdiUndo } from '@mdi/js'
 import NcInputField from '../NcInputField/NcInputField.vue'
-
-import Close from 'vue-material-design-icons/Close.vue'
-import ArrowRight from 'vue-material-design-icons/ArrowRight.vue'
-import Undo from 'vue-material-design-icons/UndoVariant.vue'
-
-import { t } from '../../l10n.js'
 import { useModelMigration } from '../../composables/useModelMigration.ts'
+import { t } from '../../l10n.js'
+import NcIconSvgWrapper from '../NcIconSvgWrapper/index.js'
 
 const NcInputFieldProps = new Set(Object.keys(NcInputField.props))
 
@@ -162,10 +158,8 @@ export default {
 	name: 'NcTextField',
 
 	components: {
+		NcIconSvgWrapper,
 		NcInputField,
-		Close,
-		ArrowRight,
-		Undo,
 	},
 
 	// Allow forwarding all attributes
@@ -190,6 +184,7 @@ export default {
 		/**
 		 * The `aria-label` to set on the trailing button
 		 * If no explicit value is set it will default to the one matching the `trailingButtonIcon`:
+		 *
 		 * @default 'Clear text'|'Save changes'|'Undo changes'
 		 */
 		trailingButtonLabel: {
@@ -202,13 +197,18 @@ export default {
 		/**
 		 * Specifies which material design icon should be used for the trailing
 		 * button.
-		 * @type {'close'|'arrowRight'|'undo'}
+		 *
+		 * The `'arrowRight'` value is deprecated and will be removed in the next major version.
+		 * Use `'arrowEnd'` instead.
+		 *
+		 * @type {'close'|'arrowEnd'|'arrowRight'|'undo'}
 		 */
 		trailingButtonIcon: {
 			type: String,
 			default: 'close',
 			validator: (value) => [
 				'close',
+				'arrowEnd',
 				'arrowRight',
 				'undo',
 			].includes(value),
@@ -218,6 +218,7 @@ export default {
 	emits: [
 		/**
 		 * Removed in v9 - use `update:modelValue` (`v-model`) instead
+		 *
 		 * @deprecated
 		 */
 		'update:value',
@@ -230,24 +231,36 @@ export default {
 		const model = useModelMigration('value', 'update:value')
 		return {
 			model,
+
+			mdiArrowRight,
+			mdiClose,
+			mdiUndo,
 		}
 	},
 
 	computed: {
+		/**
+		 * Is the trailing button icon directional.
+		 * Meaning the icon needs to be flipped on RTL text flow.
+		 */
+		isArrow() {
+			return this.trailingButtonIcon === 'arrowEnd' || this.trailingButtonIcon === 'arrowRight'
+		},
+
 		propsAndAttrsToForward() {
 			const predefinedLabels = {
-				undo: t('Undo changes'),
-				close: t('Clear text'),
+				arrowEnd: t('Save changes'),
 				arrowRight: t('Save changes'),
+				close: t('Clear text'),
+				undo: t('Undo changes'),
 			}
 
 			return {
 				// Proxy all the HTML attributes
 				...this.$attrs,
 				// Proxy original NcInputField's props
-				...Object.fromEntries(
-					Object.entries(this.$props).filter(([key]) => NcInputFieldProps.has(key)),
-				),
+				...Object.fromEntries(Object.entries(this.$props).filter(([key]) => NcInputFieldProps.has(key))),
+
 				// Adjust aria-label for predefined trailing buttons
 				trailingButtonLabel: this.trailingButtonLabel || predefinedLabels[this.trailingButtonIcon],
 			}

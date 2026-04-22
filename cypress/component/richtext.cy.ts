@@ -36,7 +36,7 @@ describe('NcRichText', () => {
 					useMarkdown: true,
 				},
 			})
-			cy.get('code').should('have.text', '<span>text</span> <span>text</span>' + '\n')
+			cy.get('code').should('have.text', '<span>text</span> <span>text</span>\n')
 		})
 		it('renders with Flavored Markdown, escaping XML', () => {
 			mount(NcRichText, {
@@ -54,7 +54,7 @@ describe('NcRichText', () => {
 					useExtendedMarkdown: true,
 				},
 			})
-			cy.get('code').should('have.text', '<span>text</span> <span>text</span>' + '\n')
+			cy.get('code').should('have.text', '<span>text</span> <span>text</span>\n')
 		})
 	})
 
@@ -62,17 +62,17 @@ describe('NcRichText', () => {
 		describe('headings', () => {
 			it('heading (with hash (#) syntax divided with space from text)', () => {
 				const testCases = [
-					{ tag: 'h1', input: '# heading 1', output: 'heading 1' },
-					{ tag: 'h2', input: '## heading 2', output: 'heading 2' },
-					{ tag: 'h3', input: '### heading 3', output: 'heading 3' },
-					{ tag: 'h4', input: '#### heading 4', output: 'heading 4' },
-					{ tag: 'h5', input: '##### heading 5', output: 'heading 5' },
+					{ tag: 'h4', input: '# heading 1', output: 'heading 1' },
+					{ tag: 'h5', input: '## heading 2', output: 'heading 2' },
+					{ tag: 'h6', input: '### heading 3', output: 'heading 3' },
+					{ tag: 'h6', input: '#### heading 4', output: 'heading 4' },
+					{ tag: 'h6', input: '##### heading 5', output: 'heading 5' },
 					{ tag: 'h6', input: '###### heading 6', output: 'heading 6' },
 				]
 
 				mount(NcRichText, {
 					propsData: {
-						text: testCases.map(i => i.input).join('\n'),
+						text: testCases.map((i) => i.input).join('\n'),
 						useMarkdown: true,
 					},
 				})
@@ -101,7 +101,7 @@ describe('NcRichText', () => {
 					},
 				})
 
-				cy.get('h1').should('have.text', 'heading 1')
+				cy.get('h4').should('have.text', 'heading 1')
 			})
 
 			it('heading 2 (with dash (-) syntax on the next line)', () => {
@@ -112,7 +112,7 @@ describe('NcRichText', () => {
 					},
 				})
 
-				cy.get('h2').should('have.text', 'heading 2')
+				cy.get('h5').should('have.text', 'heading 2')
 			})
 		})
 
@@ -393,6 +393,37 @@ describe('NcRichText', () => {
 			})
 		})
 
+		describe('links', () => {
+			const testLink = (key: string, { text, href = text, name = text }) => {
+				it(key, () => {
+					mount(NcRichText, {
+						propsData: {
+							text,
+							useMarkdown: true,
+						},
+					})
+					cy.get('a').should('have.text', name)
+					cy.get('a').invoke('attr', 'href').should('eq', href)
+				})
+			}
+
+			testLink('autolink', { text: 'https://autolink.me' })
+			testLink('relative link', { text: '[hello](world)', href: 'world', name: 'hello' })
+			testLink('absolute link', { text: '[hello](https://nextcloud.com)', href: 'https://nextcloud.com', name: 'hello' })
+			testLink('tel link', { text: '[hello](tel:+49123456789)', href: 'tel:+49123456789', name: 'hello' })
+
+			it('no link to unknown protocols', () => {
+				mount(NcRichText, {
+					propsData: {
+						text: '[link](other:proto)',
+						useMarkdown: true,
+					},
+				})
+				cy.get('body').should('contain', name)
+				cy.get('a').should('not.exist')
+			})
+		})
+
 		describe('multiline code', () => {
 			it('multiline code (with triple backticks syntax)', () => {
 				mount(NcRichText, {
@@ -554,7 +585,7 @@ describe('NcRichText', () => {
 
 				mount(NcRichText, {
 					propsData: {
-						text: testCases.map(i => i.input).join('\n'),
+						text: testCases.map((i) => i.input).join('\n'),
 						useMarkdown: true,
 					},
 				})
@@ -575,7 +606,7 @@ describe('NcRichText', () => {
 
 				mount(NcRichText, {
 					propsData: {
-						text: testCases.map(i => i.input).join('\n'),
+						text: testCases.map((i) => i.input).join('\n'),
 						useMarkdown: true,
 					},
 				})
@@ -596,7 +627,7 @@ describe('NcRichText', () => {
 
 				mount(NcRichText, {
 					propsData: {
-						text: testCases.map(i => i.input).join('\n'),
+						text: testCases.map((i) => i.input).join('\n'),
 						useMarkdown: true,
 					},
 				})
@@ -618,7 +649,7 @@ describe('NcRichText', () => {
 
 				mount(NcRichText, {
 					propsData: {
-						text: testCases.map(i => i.input).join('\n'),
+						text: testCases.map((i) => i.input).join('\n'),
 						useExtendedMarkdown: true,
 					},
 				})
@@ -629,7 +660,7 @@ describe('NcRichText', () => {
 					// Vue 2.7 renders three non-breaking spaces here for some reason
 					expect(item).contain(testCases[index].output)
 				})
-				cy.get('input:checked').should('have.length', testCases.filter(test => test.checked).length)
+				cy.get('input:checked').should('have.length', testCases.filter((test) => test.checked).length)
 			})
 		})
 

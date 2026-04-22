@@ -4,12 +4,14 @@
  */
 
 const path = require('path')
+const webpack = require('webpack')
 const { merge } = require('webpack-merge')
 const webpackConfig = require('./webpack.config.js')
 
 module.exports = async () => {
 	const base = await webpackConfig()
-	const newConfig = Object.assign({}, base, {
+	const newConfig = {
+		...base,
 		// Necessary, because vue-styleguidist runs an old version of webpack-dev-server
 		devServer: {
 			historyApiFallback: true,
@@ -19,17 +21,18 @@ module.exports = async () => {
 		externals: {},
 		module: {
 			// Ignore eslint
-			rules: base.module.rules.filter(
-				rule => rule.use !== 'eslint-loader',
-			),
+			rules: base.module.rules.filter((rule) => rule.use !== 'eslint-loader'),
 		},
-	})
+	}
 
 	return {
 		require: [
+			path.join(__dirname, 'styleguide/window.js'),
 			path.join(__dirname, 'styleguide/global.requires.js'),
 			path.join(__dirname, 'styleguide/assets/icons.css'),
-			path.join(__dirname, 'styleguide/assets/additional.css'),
+			process.env.NEXTCLOUD_LEGACY
+				? path.join(__dirname, 'styleguide/assets/legacy.css')
+				: path.join(__dirname, 'styleguide/assets/additional.css'),
 			path.join(__dirname, 'styleguide/assets/styleguide.css'),
 		],
 
@@ -37,10 +40,15 @@ module.exports = async () => {
 		styleguideDir: 'styleguide/build',
 
 		pagePerSection: true,
-		minimize: true,
+		minimize: false,
 		verbose: false,
 
 		webpackConfig: merge(newConfig, {
+			plugins: [
+				new webpack.DefinePlugin({
+					NEXTCLOUD_VERSION: JSON.stringify(`${!process.env.NEXTCLOUD_LEGACY ? '32' : '31'}.0.0`),
+				}),
+			],
 			// https://webpack.js.org/configuration/dev-server/#devserverproxy
 			devServer: {
 				proxy: {
@@ -59,6 +67,8 @@ module.exports = async () => {
 				},
 			},
 		}),
+
+		serverPort: +(process.env.VUE_STYLEGUIDIST_PORT || 6060),
 
 		exampleMode: 'collapse',
 		usageMode: 'collapse',
@@ -84,20 +94,12 @@ module.exports = async () => {
 				name: 'Versions',
 				sections: [
 					{
-						name: 'next v9.x (Nextcloud 30+ on Vue 3)',
-						href: 'https://next--nextcloud-vue-components.netlify.app',
-					},
-					{
-						name: 'current v8.x (Nextcloud 28+)',
+						name: 'v9 (Nextcloud 31+ on Vue 3)',
 						href: 'https://nextcloud-vue-components.netlify.app',
 					},
 					{
-						name: 'v7.x (Nextcloud 25 - 27)',
-						href: 'https://stable7--nextcloud-vue-components.netlify.app',
-					},
-					{
-						name: 'v6.x (Nextcloud 24 - 25)',
-						href: 'https://stable6--nextcloud-vue-components.netlify.app',
+						name: 'v8 (Nextcloud 28+ on Vue 2)',
+						href: 'https://stable8--nextcloud-vue-components.netlify.app',
 					},
 				],
 			},
@@ -161,6 +163,10 @@ module.exports = async () => {
 				sectionDepth: 1,
 				sections: [
 					{
+						name: 'useFormatDateTime',
+						content: 'docs/composables/useFormatDateTime.md',
+					},
+					{
 						name: 'useHotKey',
 						content: 'docs/composables/useHotKey.md',
 
@@ -184,15 +190,19 @@ module.exports = async () => {
 					'src/components/NcAppNavigation*/*.vue',
 					'src/components/NcAppSettings*/*.vue',
 					'src/components/NcAppSidebar*/*.vue',
+					'src/components/NcAssistant*/*.vue',
 					'src/components/NcBreadcrumb*/*.vue',
 					'src/components/NcCheckboxRadioSwitch/NcCheckboxContent.vue',
 					'src/components/NcCollectionList/!(NcCollectionList).vue',
 					'src/components/NcContent/*.vue',
 					'src/components/NcDashboard*/*.vue',
 					'src/components/NcDialog*/*.vue',
+					'src/components/NcEllipsisedOption*/*.vue',
+					'src/components/NcGuestContent/*.vue',
 					'src/components/NcHeader*/*.vue',
 					'src/components/NcListItem*/*.vue',
-					'src/components/NcMultiselect*/*.vue',
+					'src/components/NcPopover/NcPopoverTriggerProvider.vue',
+					'src/components/NcRadioGroup*/*.vue',
 					'src/components/NcRichContenteditable/!(NcRichContenteditable).vue',
 					'src/components/NcRichText*/*.vue',
 					'src/components/NcSelect*/*.vue',
@@ -200,8 +210,50 @@ module.exports = async () => {
 					'src/components/NcUserBubble/NcUserBubbleDiv.vue',
 					'src/components/NcTextArea/*.vue',
 					'src/components/NcPopover/NcPopoverTriggerProvider.vue',
+					'src/components/NcFormBox/NcFormBoxItem.vue',
+					'src/components/NcIconToggleSwitch/NcIconToggleSwitch.vue',
 				],
 				sections: [
+					{
+						name: 'App containers',
+						content: 'docs/app-containers.md',
+						components: [
+							'src/components/NcContent/NcContent.vue',
+							'src/components/NcGuestContent/NcGuestContent.vue',
+						],
+						sections: [
+							{
+								name: 'NcAppContent',
+								components: 'src/components/NcAppContent/NcAppContent.vue',
+								sections: [
+									{
+										name: 'NcAppNavigation',
+										components: [
+											'src/components/NcAppNavigation*/*.vue',
+										],
+										ignore: [
+											'src/components/NcAppNavigationItem/NcAppNavigationIconCollapsible.vue',
+											'src/components/NcAppNavigationItem/NcInputConfirmCancel.vue',
+										],
+									},
+									{
+										name: 'NcAppSidebar',
+										components: [
+											'src/components/NcAppSidebar/NcAppSidebar.vue',
+											'src/components/NcAppSidebarHeader/NcAppSidebarHeader.vue',
+											'src/components/NcAppSidebarTab/NcAppSidebarTab.vue',
+										],
+									},
+									{
+										name: 'NcAppSettings',
+										components: [
+											'src/components/NcAppSettings*/*.vue',
+										],
+									},
+								],
+							},
+						],
+					},
 					{
 						name: 'NcActions',
 						components: [
@@ -211,41 +263,9 @@ module.exports = async () => {
 						],
 					},
 					{
-						name: 'App containers',
+						name: 'Nextcloud Assistant',
 						components: [
-							'src/components/NcContent/*.vue',
-						],
-						sections: [
-							{
-								name: 'NcAppNavigation',
-								components: [
-									'src/components/NcAppNavigation*/*.vue',
-								],
-								ignore: [
-									'src/components/NcAppNavigationItem/NcAppNavigationIconCollapsible.vue',
-									'src/components/NcAppNavigationItem/NcInputConfirmCancel.vue',
-								],
-							},
-							{
-								name: 'NcAppContent',
-								components: [
-									'src/components/NcAppContent*/*.vue',
-								],
-							},
-							{
-								name: 'NcAppSidebar',
-								components: [
-									'src/components/NcAppSidebar/NcAppSidebar.vue',
-									'src/components/NcAppSidebarHeader/NcAppSidebarHeader.vue',
-									'src/components/NcAppSidebarTab/NcAppSidebarTab.vue',
-								],
-							},
-							{
-								name: 'NcAppSettings',
-								components: [
-									'src/components/NcAppSettings*/*.vue',
-								],
-							},
+							'src/components/NcAssistant*/*.vue',
 						],
 					},
 					{
@@ -295,6 +315,12 @@ module.exports = async () => {
 						name: 'NcPickers',
 						components: [
 							'src/components/Nc*Picker*/*.vue',
+						],
+					},
+					{
+						name: 'NcRadioGroup',
+						components: [
+							'src/components/NcRadioGroup*/*.vue',
 						],
 					},
 					{

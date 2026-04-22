@@ -17,16 +17,16 @@ It might be used for list rendering or within the multiselect for example
 	<template>
 		<NcListItemIcon name="User 1" :avatar-size="44">
 			<template>
-				<Account :size="20" />
+				<IconAccountOutline :size="20" />
 			</template>
 		</NcListItemIcon>
 	</template>
 	<script>
-	import Account from 'vue-material-design-icons/Account.vue'
+	import IconAccountOutline from 'vue-material-design-icons/AccountOutline.vue'
 
 	export default {
 		components: {
-			Account,
+			IconAccountOutline,
 		},
 	}
 	</script>
@@ -37,16 +37,16 @@ It might be used for list rendering or within the multiselect for example
 	<template>
 		<NcListItemIcon name="Group 1" subname="13 members" :is-no-user="true">
 			<template>
-				<AccountMultiple :size="20" />
+				<IconAccountMultipleOutline :size="20" />
 			</template>
 		</NcListItemIcon>
 	</template>
 	<script>
-	import AccountMultiple from 'vue-material-design-icons/AccountMultiple.vue'
+	import IconAccountMultipleOutline from 'vue-material-design-icons/AccountMultipleOutline.vue'
 
 	export default {
 		components: {
-			AccountMultiple,
+			IconAccountMultipleOutline,
 		},
 	}
 	</script>
@@ -59,16 +59,16 @@ It might be used for list rendering or within the multiselect for example
 		<NcListItemIcon name="Testing admin" subname="testme@example.com" search="test" />
 		<NcListItemIcon name="Test group 2" subname="loremipsum@domain.com" :is-no-user="true" search="test">
 			<template>
-				<AccountMultiple :size="20" />
+				<IconAccountMultipleOutline :size="20" />
 			</template>
 		</NcListItemIcon>
 	</template>
 	<script>
-	import AccountMultiple from 'vue-material-design-icons/AccountMultiple.vue'
+	import IconAccountMultipleOutline from 'vue-material-design-icons/AccountMultipleOutline.vue'
 
 	export default {
 		components: {
-			AccountMultiple,
+			IconAccountMultipleOutline,
 		},
 	}
 	</script>
@@ -81,13 +81,13 @@ It might be used for list rendering or within the multiselect for example
 			<NcActions>
 				<NcActionButton @click="alert('Edit')">
 					<template #icon>
-						<Pencil :size="20" />
+						<IconPencilOutline :size="20" />
 					</template>
 					Edit
 				</NcActionButton>
 				<NcActionButton @click="alert('Delete')">
 					<template #icon>
-						<Delete :size="20" />
+						<IconDeleteOutline :size="20" />
 					</template>
 					Delete
 				</NcActionButton>
@@ -95,13 +95,13 @@ It might be used for list rendering or within the multiselect for example
 		</NcListItemIcon>
 	</template>
 	<script>
-	import Delete from 'vue-material-design-icons/Delete.vue'
-	import Pencil from 'vue-material-design-icons/Pencil.vue'
+	import IconDeleteOutline from 'vue-material-design-icons/DeleteOutline.vue'
+	import IconPencilOutline from 'vue-material-design-icons/PencilOutline.vue'
 
 	export default {
 		components: {
-			Delete,
-			Pencil,
+			IconDeleteOutline,
+			IconPencilOutline,
 		},
 	}
 	</script>
@@ -109,12 +109,14 @@ It might be used for list rendering or within the multiselect for example
 </docs>
 
 <template>
-	<span :id="id"
+	<span
+		:id="id"
 		class="option"
 		:class="{ 'option--compact': avatarSize < defaultSize }"
 		:style="cssVars"
 		v-on="$listeners">
-		<NcAvatar v-bind="$attrs"
+		<NcAvatar
+			v-bind="$attrs"
 			:disable-menu="true"
 			:disable-tooltip="true"
 			:display-name="displayName || name"
@@ -122,10 +124,12 @@ It might be used for list rendering or within the multiselect for example
 			:size="avatarSize"
 			class="option__avatar" />
 		<div class="option__details">
-			<NcHighlight class="option__lineone"
+			<NcHighlight
+				class="option__lineone"
 				:text="name"
 				:search="searchParts[0]" />
-			<NcHighlight v-if="isValidSubname && isSizeBigEnough"
+			<NcHighlight
+				v-if="isValidSubname && isSizeBigEnough"
 				class="option__linetwo"
 				:text="subname"
 				:search="searchParts[1]" />
@@ -137,11 +141,13 @@ It might be used for list rendering or within the multiselect for example
 
 		<!-- @slot use this slot to add a custom icon or actions -->
 		<slot>
-			<NcIconSvgWrapper v-if="hasIconSvg"
+			<NcIconSvgWrapper
+				v-if="hasIconSvg"
 				class="option__icon"
 				:svg="iconSvg"
 				:name="iconName" />
-			<span v-else-if="hasIcon"
+			<span
+				v-else-if="hasIcon"
 				class="icon option__icon"
 				:class="icon"
 				:aria-label="iconName" />
@@ -150,11 +156,10 @@ It might be used for list rendering or within the multiselect for example
 </template>
 
 <script>
+import { userStatus } from '../../mixins/index.js'
 import NcAvatar from '../NcAvatar/index.js'
 import NcHighlight from '../NcHighlight/index.js'
 import NcIconSvgWrapper from '../NcIconSvgWrapper/index.js'
-
-import { userStatus } from '../../mixins/index.js'
 
 // global margin, ^2 ratio
 const margin = 8
@@ -249,6 +254,7 @@ export default {
 			type: String,
 			default: null,
 		},
+
 		/**
 		 * See the [Avatar](#Avatar) isNoUser prop
 		 * Enable/disable the UserStatus fetching
@@ -303,6 +309,7 @@ export default {
 
 		/**
 		 * Seperates the search property into two parts, the first one is the search part on the name, the second on the subname.
+		 *
 		 * @return {[string, string]}
 		 */
 		searchParts() {

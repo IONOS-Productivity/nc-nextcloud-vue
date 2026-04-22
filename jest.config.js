@@ -4,6 +4,7 @@
  */
 
 const ignorePatterns = [
+	'@nextcloud/',
 	'ansi-regex',
 	'bail',
 	'ccount', // ESM dependency of remark-gfm
@@ -17,7 +18,7 @@ const ignorePatterns = [
 	'longest-streak', // ESM dependency of remark-gfm
 	'lowlight', // ESM dependency of rehype-highlight
 	'markdown-table', // ESM dependency of remark-gfm
-	'mdast-util-*',
+	'mdast-*',
 	'micromark',
 	'p-queue',
 	'p-timeout',
@@ -39,6 +40,9 @@ const ignorePatterns = [
 ]
 
 module.exports = {
+	// Disable globals to simplify migration to Vitest
+	injectGlobals: false,
+
 	moduleFileExtensions: [
 		'js',
 		'ts',

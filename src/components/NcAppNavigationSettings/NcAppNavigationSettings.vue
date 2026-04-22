@@ -4,21 +4,27 @@
 -->
 
 <template>
-	<div id="app-settings"
+	<div
+		id="app-settings"
 		v-click-outside="clickOutsideConfig"
 		:class="{ open }">
 		<div id="app-settings__header">
-			<button class="settings-button"
-				type="button"
+			<NcButton
+				:aria-controls="contentId"
 				:aria-expanded="open ? 'true' : 'false'"
-				aria-controls="app-settings__content"
-				@click="toggleMenu">
-				<Cog class="settings-button__icon" :size="20" />
-				<span class="settings-button__label">{{ name }}</span>
-			</button>
+				class="settings-button"
+				alignment="start"
+				variant="tertiary"
+				wide
+				@click="open = !open">
+				<template #icon>
+					<NcIconSvgWrapper class="settings-button__icon" :path="isLegacy32 ? mdiCog : mdiCogOutline" />
+				</template>
+				{{ name }}
+			</NcButton>
 		</div>
 		<Transition name="slide-up">
-			<div v-show="open" id="app-settings__content">
+			<div v-show="open" :id="contentId">
 				<slot />
 			</div>
 		</Transition>
@@ -26,35 +32,58 @@
 </template>
 
 <script>
+import { mdiCog, mdiCogOutline } from '@mdi/js'
+import { vOnClickOutside as ClickOutside } from '@vueuse/components'
+import NcButton from '../NcButton/NcButton.vue'
+import NcIconSvgWrapper from '../NcIconSvgWrapper/NcIconSvgWrapper.vue'
 import { t } from '../../l10n.js'
 import { clickOutsideOptions } from '../../mixins/index.js'
-
-import Cog from 'vue-material-design-icons/Cog.vue'
-
-import { vOnClickOutside as ClickOutside } from '@vueuse/components'
+import GenRandomId from '../../utils/GenRandomId.js'
+import { isLegacy32 } from '../../utils/legacy.ts'
 
 export default {
 	directives: {
 		ClickOutside,
 	},
+
 	components: {
-		Cog,
+		NcButton,
+		NcIconSvgWrapper,
 	},
+
 	mixins: [
 		clickOutsideOptions,
 	],
+
 	props: {
+		/**
+		 * Text of the button
+		 *
+		 * @default 'Settings'
+		 */
 		name: {
 			type: String,
 			required: false,
 			default: t('Settings'),
 		},
 	},
+
+	setup() {
+		const contentId = GenRandomId()
+		return {
+			contentId,
+			isLegacy32,
+			mdiCog,
+			mdiCogOutline,
+		}
+	},
+
 	data() {
 		return {
 			open: false,
 		}
 	},
+
 	computed: {
 		clickOutsideConfig() {
 			return [
@@ -63,16 +92,15 @@ export default {
 			]
 		},
 	},
+
 	methods: {
-		toggleMenu() {
-			this.open = !this.open
-		},
 		closeMenu() {
 			this.open = false
 		},
 	},
 }
 </script>
+
 <style lang="scss" scoped>
 #app-settings {
 	margin-top: auto;
@@ -83,38 +111,10 @@ export default {
 		margin: 0 $app-navigation-settings-margin $app-navigation-settings-margin $app-navigation-settings-margin;
 
 		.settings-button {
-			display: flex;
-			flex: 1 1 0;
-			height: var(--default-clickable-area);
-			width: 100%;
-			padding: 0;
-			margin: 0;
-			background-color: transparent;
-			box-shadow: none;
-			border: 0;
-			border-radius: var(--body-container-radius);
-			text-align: start;
-			font-weight: normal;
-			font-size: 100%;
-			color: var(--color-main-text);
-			padding-inline-end: 14px;
-			line-height: var(--default-clickable-area);
+			padding-inline: 0 calc((var(--default-clickable-area) - 16px) / 2) !important;
 
-			&:hover,
-			&:focus {
-				background-color: var(--color-background-hover);
-			}
-
-			&__icon {
-				width: var(--default-clickable-area);
-				height: var(--default-clickable-area);
-				min-width: var(--default-clickable-area);
-			}
-			&__label {
-				overflow: hidden;
-				max-width: 100%;
-				white-space: nowrap;
-				text-overflow: ellipsis;
+			:deep(.button-vue__text) {
+				font-weight: normal !important;
 			}
 		}
 	}

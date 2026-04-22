@@ -52,3 +52,9 @@ path = ["styleguide/assets/img/background/jenna-kim-the-globe.webp", "styleguide
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2024 Nextcloud GmbH"
 SPDX-License-Identifier = "CC-BY-SA-4.0"
+
+[[annotations]]
+path = ["styleguide/assets/img/background/jo-myoung-hee-fluid.webp", "styleguide/assets/img/background/jo-myoung-hee-fluid-dark.webp"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2025 Nextcloud GmbH"
+SPDX-License-Identifier = "CC-BY-SA-4.0"

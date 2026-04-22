@@ -4,7 +4,8 @@
 -->
 
 <template>
-	<span class="checkbox-content"
+	<span
+		class="checkbox-content"
 		:class="{
 			['checkbox-content-' + type]: true,
 			'checkbox-content--button-variant': buttonVariant,
@@ -14,10 +15,11 @@
 			label can't be used here because of shift+click firefox bug
 			https://bugzilla.mozilla.org/show_bug.cgi?id=559506
 		-->
-		<span :class="{
-				'checkbox-content__icon': true,
+		<span
+			class="checkbox-content__icon"
+			:class="{
 				'checkbox-content__icon--checked': isChecked,
-				[iconClass]: true
+				[iconClass]: true,
 			}"
 			:aria-hidden="true"
 			inert>
@@ -25,32 +27,46 @@
 					@binding {bool} checked The input checked state
 					@binding {bool} loading The loading state
 			-->
-			<slot name="icon"
+			<slot
+				name="icon"
 				:checked="isChecked"
 				:loading="loading">
 				<NcLoadingIcon v-if="loading" />
-				<component :is="checkboxRadioIconElement"
+				<NcIconToggleSwitch
+					v-else-if="isSwitchType"
+					:checked="isChecked"
+					:size="iconSize"
+					inline />
+				<component
+					:is="checkboxRadioIconElement"
 					v-else-if="!buttonVariant"
-					:size="size" />
+					:size="iconSize" />
 			</slot>
 		</span>
 
-		<span v-if="$slots.default" :class="['checkbox-content__text', textClass]">
-			<!-- @slot The checkbox/radio label -->
-			<slot />
+		<span v-if="$slots.default || $slots.description" class="checkbox-content__wrapper">
+			<span
+				v-if="$slots.default"
+				:id="labelId"
+				class="checkbox-content__text"
+				:class="textClass">
+				<!-- @slot The checkbox/radio label -->
+				<slot />
+			</span>
+			<span v-if="!isButtonType && $slots.description" :id="descriptionId" class="checkbox-content__description">
+				<slot name="description" />
+			</span>
 		</span>
 	</span>
 </template>
 
 <script>
 import CheckboxBlankOutline from 'vue-material-design-icons/CheckboxBlankOutline.vue'
-import MinusBox from 'vue-material-design-icons/MinusBox.vue'
 import CheckboxMarked from 'vue-material-design-icons/CheckboxMarked.vue'
-import RadioboxMarked from 'vue-material-design-icons/RadioboxMarked.vue'
+import MinusBox from 'vue-material-design-icons/MinusBox.vue'
 import RadioboxBlank from 'vue-material-design-icons/RadioboxBlank.vue'
-import ToggleSwitchOff from 'vue-material-design-icons/ToggleSwitchOff.vue'
-import ToggleSwitch from 'vue-material-design-icons/ToggleSwitch.vue'
-
+import RadioboxMarked from 'vue-material-design-icons/RadioboxMarked.vue'
+import NcIconToggleSwitch from '../NcIconToggleSwitch/NcIconToggleSwitch.vue'
 import NcLoadingIcon from '../NcLoadingIcon/index.js'
 
 export const TYPE_CHECKBOX = 'checkbox'
@@ -63,6 +79,7 @@ export default {
 
 	components: {
 		NcLoadingIcon,
+		NcIconToggleSwitch,
 	},
 
 	props: {
@@ -93,7 +110,7 @@ export default {
 		type: {
 			type: String,
 			default: 'checkbox',
-			validator: type => [
+			validator: (type) => [
 				TYPE_CHECKBOX,
 				TYPE_RADIO,
 				TYPE_SWITCH,
@@ -136,15 +153,35 @@ export default {
 		/**
 		 * Icon size
 		 */
-		size: {
+		iconSize: {
 			type: Number,
 			default: 24,
+		},
+
+		/**
+		 * Label id attribute
+		 */
+		labelId: {
+			type: String,
+			required: true,
+		},
+
+		/**
+		 * Description id attribute
+		 */
+		descriptionId: {
+			type: String,
+			required: true,
 		},
 	},
 
 	computed: {
 		isButtonType() {
 			return this.type === TYPE_BUTTON
+		},
+
+		isSwitchType() {
+			return this.type === TYPE_SWITCH
 		},
 
 		/**
@@ -158,14 +195,6 @@ export default {
 					return RadioboxMarked
 				}
 				return RadioboxBlank
-			}
-
-			// Switch
-			if (this.type === TYPE_SWITCH) {
-				if (this.isChecked) {
-					return ToggleSwitch
-				}
-				return ToggleSwitchOff
 			}
 
 			// Checkbox
@@ -196,8 +225,11 @@ export default {
 	// but restrict to content so plain checkboxes / radio switches do not expand
 	max-width: fit-content;
 
-	&__text {
+	&__wrapper {
 		flex: 1 0;
+	}
+
+	&__text {
 
 		&:empty {
 			// hide text if empty to ensure checkbox outline is a circle instead of oval
@@ -205,10 +237,31 @@ export default {
 		}
 	}
 
+	&-checkbox:not(&--button-variant) &__icon,
+	&-radio:not(&--button-variant) &__icon,
+	&-switch:not(&--button-variant) &__icon {
+		margin-block: calc((var(--default-clickable-area) - 2 * var(--default-grid-baseline) - var(--icon-height)) / 2) auto;
+		line-height: 0;
+	}
+
+	&-checkbox:not(&--button-variant) &__icon--has-description,
+	&-radio:not(&--button-variant) &__icon--has-description,
+	&-switch:not(&--button-variant) &__icon--has-description {
+		display: flex;
+		align-items: center;
+		margin-block-end: 0;
+		align-self: start;
+	}
+
 	&__icon > * {
 		width: var(--icon-size);
-		height: var(--icon-size);
+		height: var(--icon-height);
 		color: var(--color-primary-element);
+	}
+
+	&__description {
+		display: block;
+		color: var(--color-text-maxcontrast);
 	}
 
 	&--button-variant {

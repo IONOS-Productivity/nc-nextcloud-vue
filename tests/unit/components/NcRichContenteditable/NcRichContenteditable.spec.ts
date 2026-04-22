@@ -3,9 +3,10 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
+import { describe, expect, it, jest } from '@jest/globals'
 import { mount } from '@vue/test-utils'
-import NcRichContenteditable from '../../../../src/components/NcRichContenteditable/NcRichContenteditable.vue'
 import Tribute from 'tributejs/dist/tribute.esm.js'
+import NcRichContenteditable from '../../../../src/components/NcRichContenteditable/NcRichContenteditable.vue'
 
 // FIXME: find a way to use Tribute in JSDOM or test with e2e
 jest.mock('tributejs/dist/tribute.esm.js')
@@ -14,8 +15,7 @@ Tribute.mockImplementation(() => ({
 	detach: jest.fn(),
 }))
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const mountNcRichContenteditable = ({ propsData, listeners, attrs }: any = {}) => {
+function mountNcRichContenteditable({ propsData, listeners, attrs }: any = {}) {
 	let currentValue = propsData?.value
 
 	const wrapper = mount(NcRichContenteditable, {

@@ -5,26 +5,31 @@
 
 <template>
 	<!-- Button to expand or collapse children -->
-	<NcButton class="icon-collapse"
-		:class="{'icon-collapse--open':open}"
+	<NcButton
+		class="icon-collapse"
+		:class="{
+			'icon-collapse--active': active,
+			'icon-collapse--open': open,
+		}"
 		:aria-label="labelButton"
-		variant="tertiary"
+		:variant="active ? 'tertiary-on-primary' : 'tertiary'"
 		@click="onClick">
 		<template #icon>
-			<ChevronUp v-if="open"
+			<ChevronUp
+				v-if="open"
 				:size="20" />
-			<ChevronDown v-else
+			<ChevronDown
+				v-else
 				:size="20" />
 		</template>
 	</NcButton>
 </template>
 
 <script>
-import NcButton from '../NcButton/index.js'
-import { t } from '../../l10n.js'
-
 import ChevronDown from 'vue-material-design-icons/ChevronDown.vue'
 import ChevronUp from 'vue-material-design-icons/ChevronUp.vue'
+import { t } from '../../l10n.js'
+import NcButton from '../NcButton/index.js'
 
 export default {
 	name: 'NcAppNavigationIconCollapsible',
@@ -36,9 +41,21 @@ export default {
 	},
 
 	props: {
+		/**
+		 * Is the list currently open (or collapsed)
+		 */
 		open: {
 			type: Boolean,
+			// eslint-disable-next-line vue/no-boolean-default
 			default: true,
+		},
+
+		/**
+		 * Is the navigation item currently active.
+		 */
+		active: {
+			type: Boolean,
+			required: true,
 		},
 	},
 
@@ -60,17 +77,16 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.button-vue.icon-collapse {
+.icon-collapse {
 	position: relative;
-	z-index: 105; // above a, under button
-	color: var(--color-main-text);
 	inset-inline-end: 0;
-	&--open {
-		color: var(--color-main-text);
-		&:hover{
-			color: var(--color-primary-element);
-		}
+
+	// the whole navigation item is hovered thus will have the hover color - to distinguish we need to set a different color here.
+	&:hover {
+		background-color: var(--color-background-dark) !important;
+	}
+	&--active:hover {
+		background-color: var(--color-primary-element) !important;
 	}
 }
-
 </style>

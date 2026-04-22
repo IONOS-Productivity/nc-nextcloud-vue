@@ -21,7 +21,7 @@ similar to the NcHeaderMenu but to be used when only a trigger button is needed,
 		<NcDialog name="Search"
 			size="normal"
 			:open.sync="showDialog">
-			<NcTextField label="Search for files, comments, contacts…"
+			<NcTextField label="Search for files, comments, contacts …"
 				type="search"
 				:value.sync="query" />
 			<NcEmptyContent name="Search"
@@ -64,7 +64,8 @@ export default {
 <template>
 	<!-- We need a wrapper for server styles to apply -->
 	<div :id="id" class="header-menu">
-		<NcButton class="header-menu__trigger"
+		<NcButton
+			class="header-menu__trigger"
 			:aria-label="ariaLabel"
 			:aria-describedby="descriptionId"
 			size="large"
@@ -77,7 +78,8 @@ export default {
 			</template>
 		</NcButton>
 
-		<span v-if="description"
+		<span
+			v-if="description"
 			:id="descriptionId"
 			class="header-menu__description hidden-visually">
 			{{ description }}
@@ -135,5 +137,5 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import '../NcHeaderMenu/header-menu__trigger';
+@use '../NcHeaderMenu/header-menu__trigger.scss';
 </style>

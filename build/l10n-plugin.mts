@@ -3,9 +3,11 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-import { Plugin } from 'vite'
+import type { Plugin } from 'vite'
+
+import { readFileSync } from 'fs'
+import { dirname, join, resolve } from 'path'
 import { loadTranslations } from './translations.mts'
-import { dirname, resolve } from 'path'
 
 /**
  * This is a plugin to split all translations into chunks of users meaning components that use that translation
@@ -19,6 +21,7 @@ export default (dir: string) => {
 	let nameMap: Record<string, string>
 	// all loaded translations, as filenames ->
 	const translations: Record<string, { l: string, t: Record<string, { v: string[], p?: string }> }[]> = {}
+	let l10nRegistrationCode: string
 
 	return {
 		name: 'nextcloud-l10n-plugin',
@@ -28,6 +31,9 @@ export default (dir: string) => {
 		 * Prepare l10n loading once the building start, this loads all translations and splits them into chunks by their usage in the components.
 		 */
 		async buildStart() {
+			this.info('[l10n] Loading registration code')
+			const l10nRegistrationPath = join(import.meta.dirname, 'l10n-registration-implementation.js')
+			l10nRegistrationCode = readFileSync(l10nRegistrationPath).toString()
 			this.info('[l10n] Loading translations')
 			// all translations for all languages and components
 			const allTranslations = await loadTranslations(dir)
@@ -42,9 +48,7 @@ export default (dir: string) => {
 			for (const locale in allTranslations) {
 				const currentTranslations = allTranslations[locale]
 				for (const [usage, msgIds] of Object.entries(context)) {
-					if (!(usage in translations)) {
-						translations[usage] = []
-					}
+					translations[usage] ??= []
 					// split the translations by usage in components
 					translations[usage].push({
 						l: locale,
@@ -58,6 +62,7 @@ export default (dir: string) => {
 
 		/**
 		 * Hook into module resolver and fake all '../[...]/l10n.js' imports to inject our splitted translations
+		 *
 		 * @param source The file which is imported
 		 * @param importer The file that imported the file
 		 */
@@ -71,14 +76,16 @@ export default (dir: string) => {
 				return null
 			} else if (source.endsWith('l10n.js') && importer && !importer.includes('node_modules')) {
 				if (dirname(resolve(dirname(importer), source)).split('/').at(-1) === 'src') {
+					const [path] = importer.split('?', 2)
 					// return our wrapper for handling the import
-					return `\0l10nwrapper?source=${encodeURIComponent(importer)}`
+					return `\0l10nwrapper?source=${encodeURIComponent(path!)}`
 				}
 			}
 		},
 
 		/**
 		 * This function injects the translation chunks by returning a module that exports one translation object per component
+		 *
 		 * @param id The name of the module that should be loaded
 		 */
 		load(id) {
@@ -97,50 +104,10 @@ export default (dir: string) => {
 				return `import {t,n,register,${imports.join(',')}} from '\0l10n';register(${imports.join(',')});export {t,n};`
 			} else if (id === '\0l10n') {
 				// exports are all chunked translations
-				const exports = Object.entries(nameMap).map(([usage, id]) => `export const ${id} = ${JSON.stringify(translations[usage])}`).join(';\n')
-				return `import { getLanguage } from '@nextcloud/l10n'
-import { getGettextBuilder } from '@nextcloud/l10n/gettext'
-const builder = getGettextBuilder().setLanguage(getLanguage())
-let gettext = builder.build()
-
-export const n = (...args) => gettext.ngettext(...args)
-export const t = (...args) => gettext.gettext(...args)
-
-export function register(...chunks) {
-	for (const chunk of chunks) {
-		if (!chunk.registered) {
-			// for every language in the chunk: decompress and register
-			for (const { l: language, t: translations } of chunk) {
-				if (language !== getLanguage() || !translations) {
-					continue
-				}
-
-				const decompressed = Object.fromEntries(
-					Object.entries(translations)
-					.map(([id, value]) => [
-						id,
-						{
-							msgid: id,
-							msgid_plural: value.p,
-							msgstr: value.v,
-						}
-					])
-				)
-
-				gettext = builder.addTranslation(getLanguage(), {
-					translations: {
-						'': {
-							...(gettext.bundle.translations?.[''] ?? {}),
-							...decompressed,
-						},
-					},
-				}).build()
-			}
-			chunk.registered = true
-		}
-	}
-}
-${exports}`
+				const exports = Object.entries(nameMap)
+					.map(([usage, id]) => `export const ${id} = ${JSON.stringify(translations[usage])}`)
+					.join(';\n')
+				return `${l10nRegistrationCode}\n${exports}`
 			}
 		},
 	} as Plugin
